@@ -22,10 +22,6 @@ def Main():
         if data[2:8] == "EXISTS":
             filesize = long(data[8:-1])
             print("File exists, " + str(filesize) + " Bytes")
-            ok = "OK"
-            print("ok here")
-            s.sendto(ok.encode('utf-8'), server)
-            print("done sending")
             f = open('new_' + filename, 'wb')
             data, addr = s.recvfrom(1024)
             totalRecv = len(data)
