@@ -8,7 +8,7 @@ Our attempt to create a new internet
 
 - [X] Client side ---> (*Mostafa*)
 - [X] Server side ---> (*Mostafa*)
-- [ ] Server with multi-threading support ---> (*Mostafa*)
+- [X] Server with multi-threading support ---> (*Mostafa*)
 - [ ] Stop and wait ---> (*Mostafa*)
 - [ ] Selective repeat ---> (*Essam*)
 - [ ] Go back-N ---> (*Essam*)
