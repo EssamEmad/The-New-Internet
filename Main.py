@@ -1,10 +1,10 @@
 #import pyLOUS
 from Server import Server
 from Client import Client
-
+# Threads for Server and client
 threads = []
 
-# Create new threads
+# Create new threads, passing threadID, name, counter
 thread1 = Server(1, "Thread-1", 1)
 thread2 = Client(2, "Thread-2", 2)
 
