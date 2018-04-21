@@ -30,25 +30,30 @@ class Client (threading.Thread):
 
         filename = raw_input("Filename? -> ")
         if filename != 'q':
-            s.sendto(filename.encode('utf-8'), server)
-            data, addr = s.recvfrom(1024)
+            s.sendto(filename.encode(), server)
+            data, addr = s.recvfrom(4096)
             data = str(data)
             print(data[2:8])
             if data[2:8] == "EXISTS":
                 filesize = long(data[8:-1])
+                size_client = int(filesize)
                 print("File exists, " + str(filesize) + " Bytes")
                 f = open('new_' + filename, 'wb')
-                data, addr = s.recvfrom(1024)
-                totalRecv = len(data)
-                f.write(data)
-                print("Total Recieved " + str(totalRecv) + " file size " + str(filesize))
-                while totalRecv < filesize:
-                    data, addr = s.recvfrom(1024)
-                    totalRecv += len(data)
-                    f.write(data)
-                    print("{0:.2f}".format((totalRecv / float(filesize)) * 100) + "% Done")
-                print("Download Complete!")
+                print("Receiving packets will start now if file exists.")
+                # print(
+                #   "Timeout is 15 seconds so please wait for timeout at the end.")
+                d = 0
+                while size_client != 0:
+                    ClientBData, clientbAddr = s.recvfrom(4096)
+                    f.write(ClientBData)
+                    d += 1
+                    print("Received packet number:" + str(d))
+                    size_client = size_client - 1
+                    print(size_client)
+
                 f.close()
+                print(
+                    "New Received file closed. Check contents in your directory.")
             else:
                 print("File Does Not Exist!")
 

@@ -1,7 +1,8 @@
 import threading
 import socket
-
 import os
+
+from numpy import long
 
 
 class Server(threading.Thread):
@@ -26,14 +27,23 @@ class Server(threading.Thread):
         filename = str(filename)
         filename = filename[2:-1]
         if os.path.isfile(filename):
-            fileExists = "EXISTS " + str(os.path.getsize(filename))
-            sock.sendto(fileExists.encode('utf-8'), addr)
-            with open(filename, 'rb') as f:
-                bytesToSend = f.read(1024)
-                sock.sendto(str(bytesToSend).encode('utf-8'), addr)
-                while bytesToSend != "":
-                    bytesToSend = f.read(1024)
-                    sock.sendto(str(bytesToSend).encode('utf-8'), addr)
+            size_server = long(os.path.getsize(filename))
+            NumS = int(size_server / 4096)
+            NumS = NumS + 1
+            fileExists = "EXISTS " + str(NumS)
+            sock.sendto(fileExists.encode(), addr)
+            check = int(NumS)
+            GetRunS = open(filename, "rb")
+            c = 0
+            while check != 0:
+                RunS = GetRunS.read(4096)
+                sock.sendto(RunS, addr)
+                c += 1
+                check -= 1
+                print("Packet number:" + str(c))
+                print("Data sending in process:")
+            GetRunS.close()
+            print("Sent from Server - Get function")
         else:
             error = "ERROR"
             sock.sendto(error.encode('utf-8'), addr)
@@ -47,10 +57,7 @@ class Server(threading.Thread):
         sock.bind((host, port))
         print("Server Started.")
         while True:
-            # try:
-            data, addr = sock.recvfrom(1024)
-            # except:
-            # print("An existing connection was forcibly closed by the remote host")
+            data, addr = sock.recvfrom(4096)
             print("client connedted ip:<" + str(addr) + ">")
             self.run_server(data, addr, sock)
             # Thread is created for each incoming connection
