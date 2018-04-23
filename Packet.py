@@ -8,6 +8,8 @@ class Packet:
         self.pcorruption = RandomGenerator(pcorruption)
 
     def isACKType(self):
+        """Returns whether the packet is a control packet or data packet,
+        Control packets are ACKS as we use ACK only protocol"""
         return self.length == 8 #Acks are only 8 bytes in length
 
     def isCorrupt(self):
