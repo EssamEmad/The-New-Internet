@@ -55,11 +55,8 @@ class SelectiveRepeatReceiver(ReceiverWindowManager):
         # if self.is_pkt_expected(pkt): #Packet expected?
         index = abs(self.window.base_sqn - pkt.seqn)
         if index < len(self.window):
-            if self.window.buffer[index] != None:
-                return False
-            else:
+            if not self.window.buffer[index]:
                 self.window.buffer[index] = pkt
-                return True
         return self.window.slide_if_needed()
 
 class GoBkNReceiver (ReceiverWindowManager):

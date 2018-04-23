@@ -5,11 +5,16 @@ from pip._vendor.distlib.compat import raw_input
 
 # Class of thread creation of the client
 class Client (threading.Thread):
-    def __init__(self, threadID, name, counter):
+    def __init__(self, threadID, name, counter, max_sqn,plp,pcorruption, window_manager):
+        """window_manager is one of the 3 subclasses of the abstract class ReceiverWindowManager"""
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.counter = counter
+        self.max_sqn = max_sqn
+        self.plp = plp
+        self.pcorruption = pcorruption
+        self.window_manager = window_manager
     def run(self):
         print ("Starting " + self.name)
         # Creating lock
@@ -49,23 +54,29 @@ class Client (threading.Thread):
                 # Outputting the information relieved
                 print("File exists, " + str(filesize) + " Bytes")
                 # Creating a new file with the same file's name preceded by the word 'new_' for distinguishing
-                f = open('new_' + filename, 'wb')
+                writer = FileWriter(filename)
                 print("Receiving packets will start now if file exists.")
                 # Packets received
-                d = 0
+                seqn = 0
                 while size_client != 0:
                     # Getting chunks of the file and its address
+                    # TODO Change port/socket receiving from
                     ClientBData, clientbAddr = s.recvfrom(4096)
+                    pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
+                    delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
+                    #in the window manager
                     # Write the data in the new file
-                    f.write(ClientBData)
+                    if delivered_pkts:
+                        writer.appendPackets(delivered_pkts)
                     # Incrementing numbers of packets recieved
-                    d += 1
+                    seqn = (seqn + 1) % self.max_sqn
                     print("Received packet number:" + str(d))
                     # Decrementing number of packets of the file itself we got before receiving
                     size_client = size_client - 1
                     print(size_client)
                 # Closing the file
-                f.close()
+                writer.write()
+                writer.close()
                 print("New Received file closed. Check contents in your directory.")
             else:
                 print("File Does Not Exist!")
