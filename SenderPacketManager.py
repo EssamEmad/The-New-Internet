@@ -38,6 +38,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
             if index < self.window_size:
                 self.buffer[index] = pkt
                 self.send_callback(pkt)
+                self.start_timer_for_pkt(pkt)
                 return True
         else:
             return False
@@ -61,4 +62,4 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
                 self.base_seqn %= self.max_sqn
                 return
     def start_timer_for_pkt(self,pkt):
-        self.timers_dict[pkt.seqn] = Timer(self.timeout_length,self.send_callback, [pkt])
+        self.timers_dict[pkt.seqn] = Timer(self.timeout_length,self.send_pkt, [pkt])
