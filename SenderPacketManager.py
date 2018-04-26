@@ -44,7 +44,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
             return False
 
     def can_buffer_pkts(self):
-        return len(filter(lambda x: x == None, self.buffer))
+        return len(list(filter(lambda x: x == None, self.buffer)))
 
     def receive_ack(self,pkt):
         index = abs(pkt.seqn - self.base_seqn)

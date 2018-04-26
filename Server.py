@@ -4,6 +4,7 @@ from SenderPacketManager import *
 from numpy import long
 from Packet import *
 from threading import *
+import atexit
 # Class of thread creation of the server
 class Server:
     def __init__(self, max_sqn,window_size):
@@ -13,6 +14,7 @@ class Server:
         #(client id basically)
         self.num_children = 0 #number of clients being serviced at the moment
         self.sockets = []
+        atexit.register(self.close_sockets)
     def start_server(self):
         self.__server_side__()
 
@@ -69,6 +71,11 @@ class Server:
             self.run_server(data, addr, sock)
             # Thread is created for each incoming connection
 
+    def close_sockets(self):
+        if self.sockets:
+            for so in self.sockets:
+                so.close()
+                self.sockets.remove(so)
 
 
 class UDPSender(Thread):
@@ -127,11 +134,6 @@ class UDPSender(Thread):
         """Callback for the window manager to prompt the sender to actually transmit
         the data over the new internet"""
         self.socket.sendto(pkt.data, self.dest)
-    def close_sockets(self):
-        if self.sockets:
-            for so in self.sockets:
-                so.close()
-                self.sockets.remove(so)
 
 
 server = Server(1024, 10)
