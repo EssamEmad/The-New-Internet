@@ -72,10 +72,11 @@ class Server:
             # Thread is created for each incoming connection
 
     def close_sockets(self):
-        if self.sockets:
-            for so in self.sockets:
-                so.close()
-                self.sockets.remove(so)
+        print('close got called sockets: {}'.format(self.sockets))
+        for so in self.sockets:
+            so.close()
+            self.sockets.remove(so)
+            print('Removing them sockets')
 
 
 class UDPSender(Thread):

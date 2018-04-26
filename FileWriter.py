@@ -1,7 +1,7 @@
 class FileWriter:
 
     def __init__(self, fileName):
-        self.file = open('new_' + fileName, 'wb')
+        self.file = open('new_' + fileName, 'w')
         self.data = ''
     def appendPackets(self, packets):
         for packet in packets:

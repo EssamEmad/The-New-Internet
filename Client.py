@@ -54,7 +54,7 @@ class Client:
                 # Packets received
                 seqn = 0
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                ack_socket.bind(addr)
+                ack_socket.bind(('', 0))
 
                 while size_client != 0:
                     # Getting chunks of the file and its address

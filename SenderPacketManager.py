@@ -3,15 +3,16 @@ from timeit import Timer
 class SenderPacketManager (ABC):
 
 
+    @abstractmethod
     def __init__(self,window_size, max_sqn, send_callback, timeout = 6):
         """send_callback is the callback used to actually transmit the pckt over
         the internet"""
-        self.size = window_size
-        self.max_sqn = max_sqn
-        self.send_callback = send_callback
-        self.buffer = [None] * window_size
-        self.base_seqn = 0
-        self.timeout_length = timeout
+        # self.size = window_size
+        # self.max_sqn = max_sqn
+        # self.send_callback = send_callback
+        # self.buffer = [None] * window_size
+        # self.base_seqn = 0
+        # self.timeout_length = timeout
     @abstractmethod
     def send_pkt(self,pkt):
         """Returns whether or not the packet was buffered to be sent"""
@@ -27,8 +28,14 @@ class SenderPacketManager (ABC):
         pass
 class SelectiveRepeatPacketManager(SenderPacketManager):
 
-    def __init__(self,window_size, max_sqn, send_callback):
-        super().__init__(window_size, max_sqn, send_callback)
+    def __init__(self,window_size, max_sqn, send_callback, timeout = 6):
+        # super().__init__(window_size, max_sqn, send_callback)
+        self.window_size = window_size
+        self.max_sqn = max_sqn
+        self.send_callback = send_callback
+        self.buffer = [None] * window_size
+        self.base_seqn = 0
+        self.timeout_length = timeout
         self.timers_dict = {}
     def send_pkt(self,pkt):
         """If the window is not full, we put the pkt in the window and call the
@@ -63,4 +70,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
                 self.base_seqn %= self.max_sqn
                 return
     def start_timer_for_pkt(self,pkt):
-        self.timers_dict[pkt.seqn] = Timer(self.timeout_length,self.send_pkt, [pkt])
+        print('bla')
+        # timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
+        # timer.start()
+        # self.timers_dict[pkt.seqn] = timer
