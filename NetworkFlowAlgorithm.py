@@ -12,7 +12,8 @@ class Window:
         """Returns the pckts that should be delivered"""
         for i in range(len(self.buffer)):
             if self.buffer[i] != None:
-                pkts = self.buffer.remove(0:i)
+                pkts = self.buffer[0:i]
+                del self.buffer[0:i]
                 self.buffer.extend([None] * i)
                 self.base_sqn += i
                 self.base_sqn %= self.max_sqn
@@ -23,10 +24,9 @@ class Window:
 
 
 class ReceiverWindowManager (ABC):
-"""Abstract class that should not be used alone"""
-    @abstractmethod
-    def __init__(self,size):
-        self.window = Window(size)
+#Abstract class that should not be used alone
+    def __init__(self,size, max_seqn):
+        self.window = Window(size,max_seqn)
     @abstractmethod
     def receive_pkt(self,pkt):
         """Returns the pkts that should be delivered if there are any"""
@@ -68,7 +68,7 @@ class GoBkNReceiver (ReceiverWindowManager):
     def receive_pkt(self,pkt):
         if pkt.seqn == self.expected_sqn:
             self.expected_sqn += 1
-            self.expected_sqn %= max_sqn
+            self.expected_sqn %= self.max_sqn
             return [pkt]
         else:
             return None

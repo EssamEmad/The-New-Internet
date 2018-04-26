@@ -1,29 +1,21 @@
 import socket
-import threading
 from numpy import long
+from Packet import *
+from FileWriter import *
 from pip._vendor.distlib.compat import raw_input
-
+from NetworkFlowAlgorithm import *
 # Class of thread creation of the client
-class Client (threading.Thread):
-    def __init__(self, threadID, name, counter, max_sqn,plp,pcorruption, window_manager):
+class Client:
+    def __init__(self,  max_sqn,plp,pcorruption, window_manager):
         """window_manager is one of the 3 subclasses of the abstract class ReceiverWindowManager"""
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.counter = counter
         self.max_sqn = max_sqn
         self.plp = plp
         self.pcorruption = pcorruption
         self.window_manager = window_manager
-    def run(self):
-        print ("Starting " + self.name)
-        # Creating lock
-        lock = threading.Lock()
-        # Get lock to synchronize threads
-        lock.acquire()
+    def start_client(self):
+        # print ("Starting " + self.name)
         self.clientSide()
-        # Free lock to release next thread
-        lock.release()
+
 
 
     def clientSide(self):
@@ -58,19 +50,25 @@ class Client (threading.Thread):
                 print("Receiving packets will start now if file exists.")
                 # Packets received
                 seqn = 0
+                ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                ack_socket.bind(addr)
+
                 while size_client != 0:
                     # Getting chunks of the file and its address
                     # TODO Change port/socket receiving from
-                    ClientBData, clientbAddr = s.recvfrom(4096)
+                    ClientBData = s.recv(4096)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
+                    #send an ack
+                    # TODO maybe only ack certain packets
+                    ack_socket.sendto("ACK{}".format(seqn).encode(),addr)
                     #in the window manager
                     # Write the data in the new file
                     if delivered_pkts:
                         writer.appendPackets(delivered_pkts)
                     # Incrementing numbers of packets recieved
                     seqn = (seqn + 1) % self.max_sqn
-                    print("Received packet number:" + str(d))
+                    print("Received packet with seqn:" + str(seqn))
                     # Decrementing number of packets of the file itself we got before receiving
                     size_client = size_client - 1
                     print(size_client)
@@ -82,3 +80,7 @@ class Client (threading.Thread):
                 print("File Does Not Exist!")
         # Closing the socket
         s.close()
+
+
+client = Client(1024,0,0,SelectiveRepeatReceiver(10,1024) )
+client.start_client()

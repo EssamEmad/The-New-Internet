@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from timeit import Timer
 class SenderPacketManager (ABC):
 
 
@@ -50,13 +50,14 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         index = abs(pkt.seqn - self.base_seqn)
         self.buffer[index] = None
         # stop the timer
-        if timers_dict[pkt.seqn]:
-            timers_dict[pkt.seqn].stop()
-            del timers_dict[pkt.seqn]
+        if self.timers_dict[pkt.seqn]:
+            self.timers_dict[pkt.seqn].stop()
+            del self.timers_dict[pkt.seqn]
         #re-organize the buffer if there were a continuous stream of ack'd packets
         for i in range(len(self.buffer)):
             if self.buffer[i] != None:
-                pkts = self.buffer.remove(0:i)
+                pkts = self.buffer[0:i]
+                del self.buffer[0:i]
                 self.buffer.extend([None] * i)
                 self.base_seqn += i
                 self.base_seqn %= self.max_sqn

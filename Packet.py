@@ -25,7 +25,7 @@ class RandomGenerator:
     def __init__(self, probability = 0):
         self.p = probability
 
-    def random():
+    def random(self):
         """Returns true or false depending on the probability that initialized the object with"
         """
-        return random.random() < probability
+        return random.random() < self.probability
