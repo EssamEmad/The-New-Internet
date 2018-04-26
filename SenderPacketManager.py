@@ -28,7 +28,7 @@ class SenderPacketManager (ABC):
 class SelectiveRepeatPacketManager(SenderPacketManager):
 
     def __init__(self,window_size, max_sqn, send_callback):
-        super(window_size, max_sqn, send_callback).__init__()
+        super().__init__(window_size, max_sqn, send_callback)
         self.timers_dict = {}
     def send_pkt(self,pkt):
         """If the window is not full, we put the pkt in the window and call the

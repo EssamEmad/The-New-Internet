@@ -12,7 +12,7 @@ class Server:
         self.last_child_id = 0 #last generated id of a child UDPSender that handles a client
         #(client id basically)
         self.num_children = 0 #number of clients being serviced at the moment
-
+        self.sockets = []
     def start_server(self):
         self.__server_side__()
 
@@ -33,7 +33,8 @@ class Server:
             fileExists = "EXISTS " + str(number_of_packets)
             # Sending the message of confirmation
             new_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            new_socket.bind((host, port + 2))
+            new_socket.bind(('', 0))
+            self.sockets.append(new_socket)
             new_socket.sendto(fileExists.encode(), addr)
             self.num_children += 1
             self.last_child_id += 1
@@ -45,17 +46,19 @@ class Server:
             error = "ERROR"
             sock.sendto(error.encode('utf-8'), addr)
             sock.close()
+            self.sockets.remove(sock)
 
 
     def __server_side__(self):
         # Host IP
         host = '127.0.0.1'
         # Port number
-        port = 4000
+        port = 5000
         # Creating UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # Binding the host with the port number
         sock.bind((host, port))
+        self.sockets.append(sock)
         print("Server Started.")
         while True:
             # Receiving the file's name
@@ -74,6 +77,7 @@ class UDPSender(Thread):
     #on a different thread.
 
     def __init__(self,threadID,filename,dest_addr, socket,max_seqn, window_size):
+        Thread.__init__(self)
         self.num_pkts = self.num_pkts(filename)
         self.file = open(filename, "rb")
         self.dest = dest_addr
@@ -123,6 +127,11 @@ class UDPSender(Thread):
         """Callback for the window manager to prompt the sender to actually transmit
         the data over the new internet"""
         self.socket.sendto(pkt.data, self.dest)
+    def close_sockets(self):
+        if self.sockets:
+            for so in self.sockets:
+                so.close()
+                self.sockets.remove(so)
 
 
 server = Server(1024, 10)

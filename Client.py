@@ -4,6 +4,7 @@ from Packet import *
 from FileWriter import *
 from pip._vendor.distlib.compat import raw_input
 from NetworkFlowAlgorithm import *
+import atexit
 # Class of thread creation of the client
 class Client:
     def __init__(self,  max_sqn,plp,pcorruption, window_manager):
@@ -12,6 +13,8 @@ class Client:
         self.plp = plp
         self.pcorruption = pcorruption
         self.window_manager = window_manager
+        atexit.register(self.close_sockets)
+        self.sockets = []
     def start_client(self):
         # print ("Starting " + self.name)
         self.clientSide()
@@ -22,13 +25,13 @@ class Client:
         # Host IP
         host = '127.0.0.1'
         # Port number
-        port = 5001
         # Pointing to the server's host and port number
         server = ('127.0.0.1', 5000)
         # Creating UDP sockets
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # Binding the host with the port numbers
-        s.bind((host, port))
+        s.bind((host, 0))
+        self.sockets.append(s)
         # Asking for the desired file's name
         filename = raw_input("Filename? -> ")
         # Checking if the user isn't requesting quitting
@@ -80,7 +83,12 @@ class Client:
                 print("File Does Not Exist!")
         # Closing the socket
         s.close()
-
+        self.sockets.remove(s)
+    def close_sockets(self):
+        if self.sockets:
+            for socket in self.sockets:
+                socket.close()
+                self.sockets.remove(socket)
 
 client = Client(1024,0,0,SelectiveRepeatReceiver(10,1024) )
 client.start_client()
