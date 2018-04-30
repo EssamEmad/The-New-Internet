@@ -5,7 +5,7 @@ class FileWriter:
         self.data = ''
     def appendPackets(self, packets):
         for packet in packets:
-            self.data += packet.data
+            self.data += str(packet.data)
         print('Filewriter packets appended: {}'.format(packets))
     def write(self):
         self.file.write(self.data)

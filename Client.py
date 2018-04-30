@@ -33,7 +33,7 @@ class Client:
         s.bind((host, 0))
         self.sockets.append(s)
         # Asking for the desired file's name
-        filename = raw_input("Filename? -> ")
+        filename = 'TestingFile.txt'#raw_input("Filename? -> ")
         # Checking if the user isn't requesting quitting
         if filename != 'q':
             # Sending the file's name to the server

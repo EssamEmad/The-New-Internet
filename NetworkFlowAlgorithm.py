@@ -11,7 +11,7 @@ class Window:
     def slide_if_needed(self):
         """Returns the pckts that should be delivered"""
         for i in range(len(self.buffer)):
-            if self.buffer[i] != None:
+            if self.buffer[i] == None:
                 pkts = self.buffer[0:i]
                 del self.buffer[0:i]
                 self.buffer.extend([None] * i)
