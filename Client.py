@@ -58,13 +58,13 @@ class Client:
 
                 while size_client != 0:
                     # Getting chunks of the file and its address
-                    # TODO Change port/socket receiving from
                     ClientBData = s.recv(4096)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
-                    # TODO maybe only ack certain packets
-                    ack_socket.sendto("ACK{}".format(seqn).encode(),addr)
+                    # if self.window_manager.is_pkt_expected(pkt):
+                    ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
+                    print('ACK WITH SQN: {}, sent from the client'.format(seqn))
                     #in the window manager
                     # Write the data in the new file
                     if delivered_pkts:
@@ -90,5 +90,5 @@ class Client:
                 socket.close()
                 self.sockets.remove(socket)
 
-client = Client(1024,0,0,SelectiveRepeatReceiver(10,1024) )
+client = Client(1024,0,0,SelectiveRepeatReceiver(3,1024) )
 client.start_client()

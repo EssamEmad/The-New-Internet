@@ -39,7 +39,6 @@ class SelectiveRepeatReceiver(ReceiverWindowManager):
 
     def is_pkt_expected(self, pkt):
         """Returns whether this packet is in the expected window range"""
-        pass
         return pkt.seqn >= self.window.base_sqn and pkt.seqn < (self.window.base_sqn + self.window.size) % self.window.max_sqn
     def receive_pkt(self,pkt):
         """Returns the pkts that should be delivered if there are any"""

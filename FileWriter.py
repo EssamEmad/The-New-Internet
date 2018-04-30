@@ -5,9 +5,10 @@ class FileWriter:
         self.data = ''
     def appendPackets(self, packets):
         for packet in packets:
-            self.data += str(packet.data)
+            self.data += packet.data.decode("utf-8")
         print('Filewriter packets appended: {}'.format(packets))
     def write(self):
+        print('Writing pakckets with length:{}'.format(len(self.data)))
         self.file.write(self.data)
     def close(self):
         self.file.close()

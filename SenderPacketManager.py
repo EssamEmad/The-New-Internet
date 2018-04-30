@@ -4,15 +4,10 @@ class SenderPacketManager (ABC):
 
 
     @abstractmethod
-    def __init__(self,window_size, max_sqn, send_callback, timeout = 6):
+    def __init__(self):
         """send_callback is the callback used to actually transmit the pckt over
         the internet"""
-        # self.size = window_size
-        # self.max_sqn = max_sqn
-        # self.send_callback = send_callback
-        # self.buffer = [None] * window_size
-        # self.base_seqn = 0
-        # self.timeout_length = timeout
+        pass
     @abstractmethod
     def send_pkt(self,pkt):
         """Returns whether or not the packet was buffered to be sent"""
@@ -26,6 +21,8 @@ class SenderPacketManager (ABC):
     def receive_ack(self,pkt):
         """Receive a control packet (NAK or ACK)"""
         pass
+
+
 class SelectiveRepeatPacketManager(SenderPacketManager):
 
     def __init__(self,window_size, max_sqn, send_callback, timeout = 6):
@@ -37,6 +34,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         self.base_seqn = 0
         self.timeout_length = timeout
         self.timers_dict = {}
+
     def send_pkt(self,pkt):
         """If the window is not full, we put the pkt in the window and call the
         send callback immediately without checking if a send request has already been made"""
@@ -47,17 +45,21 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
                 self.send_callback(pkt)
                 self.start_timer_for_pkt(pkt)
                 return True
-        else:
-            return False
+            # else:
+                # print('Base seqn:{}, where pkts index:{}'.format(self.base_seqn,pkt.seqn))
+
+        return False
 
     def can_buffer_pkts(self):
-        return len(list(filter(lambda x: x == None, self.buffer)))
+        can_buffer = len(list(filter(lambda x: x is None, self.buffer)))
+        # print('Sender can buffer packets: {}, buffer:{}'.format(can_buffer,self.buffer))
+        return can_buffer
 
     def receive_ack(self,pkt):
         index = abs(pkt.seqn - self.base_seqn)
         self.buffer[index] = None
         # stop the timer
-        if self.timers_dict[pkt.seqn]:
+        if pkt.seqn in self.timers_dict and self.timers_dict[pkt.seqn]:
             self.timers_dict[pkt.seqn].stop()
             del self.timers_dict[pkt.seqn]
         #re-organize the buffer if there were a continuous stream of ack'd packets
@@ -68,9 +70,10 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
                 self.buffer.extend([None] * i)
                 self.base_seqn += i
                 self.base_seqn %= self.max_sqn
+                # print('Window manager receiving ack with seqn:{}'.format(pkt.seqn))
                 return
     def start_timer_for_pkt(self,pkt):
-        print('bla')
+        print('Starting Timer')
         # timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
         # timer.start()
         # self.timers_dict[pkt.seqn] = timer
