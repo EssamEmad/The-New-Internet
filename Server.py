@@ -90,9 +90,11 @@ class UDPSender(Thread):
         self.file = open(filename, "rb")
         self.dest = dest_addr
         self.socket = socket
-        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt)
+        self.window_manager = GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
         self.max_seqn = max_seqn
         self.threadID = threadID
+        self.packet_sending_lock = Semaphore()#Lock used to make send_pkt callback thread safe; as the timer in window
+        #manager doesn't guarrentee thread safety (It's actually run on a forked thread)
 
 
     def run(self):
@@ -126,8 +128,9 @@ class UDPSender(Thread):
             print("Packet number:" + str(self.num_pkts - number_of_packets))
             # print("Data sending in process:")
         self.file.close()
+        ack_listener_thread.stop() #implicitly closes the socket
+        self.window_manager.close_connection()
         print("Sent from Server - Get function")
-        ack_listener_thread.stop()
 
     def num_pkts(self,filename):
         # Get the file's size
@@ -140,8 +143,12 @@ class UDPSender(Thread):
 
     def send_pkt(self,pkt):
         """Callback for the window manager to prompt the sender to actually transmit
-        the data over the new internet"""
+        the data over the new internet
+        The function is thread safe"""
+        self.packet_sending_lock.acquire()
+        print('Sending packet with seqn:{}'.format(pkt.seqn))
         self.socket.sendto(pkt.data, self.dest)
+        self.packet_sending_lock.release()
 
 
 class StoppableThread(Thread):
@@ -165,13 +172,13 @@ class Ack_Listener(StoppableThread):
         self.lock = lock
         self.window_manager = window_manager
         self.socket = socket
-    def __receive_ack_listener__(self,lock, window_manager,socket):
+    def __receive_ack_listener__(self,lock, window_manager):
         """Listens to acks sent from the client, and updates the window_manager in a thread safe manner by
                 using the lock provided. This method is expected to run asynchronously (be dispatched on a thread)"""
         # TODO If we were to remove the new socket for each client, we'd have to do mapping here as this socket would
         # intercept all calls, not only acks
         while not self.stopped():
-            bytes = socket.recv(4096)
+            bytes = self.socket.recv(4096)
             ack = bytes.decode("utf-8")
             if 'ACK' in ack:
                 ack_seqn = int(ack[3:])
@@ -180,8 +187,11 @@ class Ack_Listener(StoppableThread):
                 # print('Receiving ack with seqn:{}'.format(pkt.seqn))
                 window_manager.receive_ack(pkt)
                 lock.release()
+        self.socket.close()
 
     def run(self):
-        self.__receive_ack_listener__(self.lock,self.window_manager,self.socket)
+        self.__receive_ack_listener__(self.lock,self.window_manager)
+
+
 server = Server(1024, 3)
 server.start_server()

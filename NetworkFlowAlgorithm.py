@@ -71,6 +71,8 @@ class GoBkNReceiver (ReceiverWindowManager):
             return [pkt]
         else:
             return None
+    def is_pkt_expected(self,pkt):
+        return pkt.seqn == self.expected_sqn
 
 class StopWaitReceiver ( GoBkNReceiver):
     def __init__(self):

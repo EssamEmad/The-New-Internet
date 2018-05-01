@@ -69,9 +69,9 @@ class Client:
                     # Write the data in the new file
                     if delivered_pkts:
                         writer.appendPackets(delivered_pkts)
+                    print("Received packet with seqn:" + str(seqn))
                     # Incrementing numbers of packets recieved
                     seqn = (seqn + 1) % self.max_sqn
-                    print("Received packet with seqn:" + str(seqn))
                     # Decrementing number of packets of the file itself we got before receiving
                     size_client = size_client - 1
                     print(size_client)
@@ -90,5 +90,5 @@ class Client:
                 socket.close()
                 self.sockets.remove(socket)
 
-client = Client(1024,0,0,SelectiveRepeatReceiver(3,1024) )
+client = Client(1024,0,0,GoBkNReceiver(3) )
 client.start_client()
