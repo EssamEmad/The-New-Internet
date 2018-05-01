@@ -9,8 +9,10 @@ Our attempt to create a new internet
 - [X] Client side ---> (*Mostafa*)
 - [X] Server side ---> (*Mostafa*)
 - [X] Server with multi-threading support ---> (*Mostafa*)
-- [ ] Stop and wait ---> (*Mostafa*)
-- [ ] Selective repeat ---> (*Essam*)
+- [ ] Bug with scaling (When the file is large, the file received at the client is much smaller than the actual file. Most likely an issue with parsing the file in the sneder).
+- [ ] Testing Multiple Clients at the same time
+- [ ] Stop and wait ---> (*Essam*)
+- [X] Selective repeat ---> (*Essam*)
 - [ ] Go back-N ---> (*Essam*)
 - [ ] PLP ---> (*Essam*)
 - [ ] Corrupted data ---> (*Essam*)
