@@ -90,7 +90,7 @@ class UDPSender(Thread):
         self.file = open(filename, "rb")
         self.dest = dest_addr
         self.socket = socket
-        self.window_manager = GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
+        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt)#GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
         self.max_seqn = max_seqn
         self.threadID = threadID
         self.packet_sending_lock = Semaphore()#Lock used to make send_pkt callback thread safe; as the timer in window
@@ -184,7 +184,7 @@ class Ack_Listener(StoppableThread):
                 ack_seqn = int(ack[3:])
                 pkt = Packet(8, ack_seqn, ack, 0, 0)
                 lock.acquire()
-                # print('Receiving ack with seqn:{}'.format(pkt.seqn))
+                print('Receiving ack with seqn:{}'.format(pkt.seqn))
                 window_manager.receive_ack(pkt)
                 lock.release()
         self.socket.close()

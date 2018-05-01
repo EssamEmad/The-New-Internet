@@ -62,9 +62,9 @@ class Client:
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
-                    # if self.window_manager.is_pkt_expected(pkt):
-                    ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
-                    print('ACK WITH SQN: {}, sent from the client'.format(seqn))
+                    if self.window_manager.should_ack_pkt(pkt):
+                        ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
+                        print('ACK WITH SQN: {}, sent from the client'.format(seqn))
                     #in the window manager
                     # Write the data in the new file
                     if delivered_pkts:
@@ -90,5 +90,7 @@ class Client:
                 socket.close()
                 self.sockets.remove(socket)
 
-client = Client(1024,0,0,GoBkNReceiver(3) )
+gobkn = GoBkNReceiver(1024)
+selective_repeat = SelectiveRepeatReceiver(3,1024)
+client = Client(1024,0,0,selective_repeat)
 client.start_client()

@@ -32,14 +32,19 @@ class ReceiverWindowManager (ABC):
         """Returns the pkts that should be delivered if there are any"""
         pass
     @abstractmethod
-    def is_pkt_expected(self,pkt):
+    def should_ack_pkt(self,pkt):
+        """Returns whether this packet should be acked or not"""
         pass
 
 class SelectiveRepeatReceiver(ReceiverWindowManager):
 
-    def is_pkt_expected(self, pkt):
-        """Returns whether this packet is in the expected window range"""
-        return pkt.seqn >= self.window.base_sqn and pkt.seqn < (self.window.base_sqn + self.window.size) % self.window.max_sqn
+    def should_ack_pkt(self, pkt):
+        base = self.window.base_sqn
+        #We are trying to capture 2 cases: a) One of the numbers rotated (58 and 3 for example if the max_seqn is 60 and window size is 10
+        #b) 2 numbers didn't rotate
+        # return abs(base - pkt.seqn) < self.window.size or (min(pkt.seqn,base) + self.window.max_sqn - max(pkt.seqn,base)) < self.window.size
+        return  abs(pkt.seqn + self.window.max_sqn - base) % self.window.max_sqn
+        # return pkt.seqn >= self.window.base_sqn and pkt.seqn < (self.window.base_sqn + self.window.size) % self.window.max_sqn
     def receive_pkt(self,pkt):
         """Returns the pkts that should be delivered if there are any"""
         # if pkt.seqn < self.window.base_sqn:
@@ -71,7 +76,7 @@ class GoBkNReceiver (ReceiverWindowManager):
             return [pkt]
         else:
             return None
-    def is_pkt_expected(self,pkt):
+    def should_ack_pkt(self,pkt):
         return pkt.seqn == self.expected_sqn
 
 class StopWaitReceiver ( GoBkNReceiver):

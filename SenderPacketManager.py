@@ -44,7 +44,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         """If the window is not full, we put the pkt in the window and call the
         send callback immediately without checking if a send request has already been made"""
         if self.can_buffer_pkts():
-            index = abs(self.base_seqn - pkt.seqn)
+            index = self.calc_index(pkt.seqn)
             if index < self.window_size:
                 self.buffer[index] = pkt
                 self.send_callback(pkt)
@@ -61,12 +61,16 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         return can_buffer
 
     def receive_ack(self,pkt):
-        index = abs(pkt.seqn - self.base_seqn)
+        index = self.calc_index(pkt.seqn)
+        if index >= len(self.buffer) or index < 0:
+            print('Ignoring ACK with SEQN:{}'.format(pkt.seqn))
+            return #Ignore the ack
         self.buffer[index] = None
         # stop the timer
         if pkt.seqn in self.timers_dict and self.timers_dict[pkt.seqn]:
             self.timers_dict[pkt.seqn].cancel()
             del self.timers_dict[pkt.seqn]
+            print('Canceling timer for SEQN:{}'.format(pkt.seqn))
         #re-organize the buffer if there were a continuous stream of ack'd packets
         for i in range(len(self.buffer)):
             if self.buffer[i] != None:
@@ -90,6 +94,8 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         for key in  self.timers_dict:
             self.timers_dict[key].cancel()
 
+    def calc_index(self,seqn):
+        return abs(seqn + self.max_sqn - self.base_seqn) % self.max_sqn
 class GoBackNWindowManager(SenderPacketManager):
 
     def __init__(self, window_size, max_sqn, send_callback, timeout = 6):
@@ -122,7 +128,7 @@ class GoBackNWindowManager(SenderPacketManager):
     def receive_ack(self,pkt):
         """In GoBackN we receive cumulative acks. So any packet in the buffer preceding the passed pkt
         will be delivered as well"""
-        index = abs(pkt.seqn - self.base_seqn)
+        index = self.calc_index(pkt.seqn)
         # stop the timer
         for i in range(index + 1):
             acked_pkt = self.buffer[i]
@@ -147,6 +153,9 @@ class GoBackNWindowManager(SenderPacketManager):
     def close_connection(self):
         for key in  self.timers_dict:
             self.timers_dict[key].cancel()
+
+    def calc_index(self,seqn):
+        return abs(seqn + self.max_sqn - self.base_seqn) % self.max_sqn
 
 class StopAndWaitWindowManager(GoBackNWindowManager):
     def __init__(self, max_sqn, send_callback, timeout=6):
