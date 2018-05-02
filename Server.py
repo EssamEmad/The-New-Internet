@@ -148,6 +148,7 @@ class UDPSender(Thread):
         self.packet_sending_lock.acquire()
         print('Sending packet with seqn:{}'.format(pkt.seqn))
         self.socket.sendto(pkt.data, self.dest)
+        self.socket.sendto(bytes(str(pkt.seqn).encode('utf-8')), self.dest)
         self.packet_sending_lock.release()
 
 

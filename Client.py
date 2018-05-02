@@ -52,13 +52,16 @@ class Client:
                 writer = FileWriter(filename)
                 print("Receiving packets will start now if file exists.")
                 # Packets received
-                seqn = 0
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ack_socket.bind(('', 0))
 
                 while size_client != 0:
                     # Getting chunks of the file and its address
                     ClientBData = s.recv(4096)
+                    seqn = s.recv(4096)
+                    seqn = str(seqn)
+                    seqn = seqn[2:-1]
+                    seqn = int(seqn)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
@@ -71,7 +74,6 @@ class Client:
                         writer.appendPackets(delivered_pkts)
                     print("Received packet with seqn:" + str(seqn))
                     # Incrementing numbers of packets recieved
-                    seqn = (seqn + 1) % self.max_sqn
                     # Decrementing number of packets of the file itself we got before receiving
                     size_client = size_client - 1
                     print(size_client)
