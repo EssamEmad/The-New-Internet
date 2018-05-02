@@ -1,3 +1,4 @@
+import re
 import socket
 from numpy import long
 from Packet import *
@@ -54,14 +55,14 @@ class Client:
                 # Packets received
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ack_socket.bind(('', 0))
-
                 while size_client != 0:
                     # Getting chunks of the file and its address
-                    ClientBData = s.recv(4096)
-                    seqn = s.recv(4096)
-                    seqn = str(seqn)
-                    seqn = seqn[2:-1]
+                    ClientBData = s.recv(8196)
+                    seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
                     seqn = int(seqn)
+                    ClientBData = str(ClientBData)
+                    ClientBData = ClientBData.split("seq")[0]
+                    ClientBData = ClientBData.encode()
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
@@ -76,6 +77,7 @@ class Client:
                     # Incrementing numbers of packets recieved
                     # Decrementing number of packets of the file itself we got before receiving
                     size_client = size_client - 1
+                    #seqn = (seqn + 1) % self.max_sqn
                     print(size_client)
                 # Closing the file
                 writer.write()

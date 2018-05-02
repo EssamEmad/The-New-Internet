@@ -57,6 +57,7 @@ class SelectiveRepeatReceiver(ReceiverWindowManager):
         #     self.slide_if_needed()
         #     return True
         # if self.is_pkt_expected(pkt): #Packet expected?
+
         index = abs(self.window.base_sqn - pkt.seqn)
         if index < len(self.window):
             if not self.window.buffer[index]:
