@@ -60,7 +60,9 @@ class Client:
                     ClientBData = s.recv(8196)
                     seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
                     seqn = int(seqn)
-                    print(seqn)
+                    ClientBData = str(ClientBData)
+                    ClientBData = ClientBData.split("seq")[0]
+                    ClientBData = ClientBData.encode()
                     pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
