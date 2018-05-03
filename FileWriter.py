@@ -9,8 +9,10 @@ class FileWriter:
         print('Filewriter packets appended: {}'.format(packets))
     def write(self):
         print('Writing pakckets with length:{}'.format(len(self.data)))
-        self.data = self.data.replace("\\r\\n", "\n")
-        self.data = self.data[2:]
+        self.data = self.data.replace("\\r\\n", "")
+        self.data = self.data.replace("\n", "")
+        self.data = self.data.replace("b'", "")
+        self.data = self.data.replace('b"', "")
         self.file.write(self.data)
     def close(self):
         self.file.close()

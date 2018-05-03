@@ -60,11 +60,13 @@ class Client:
                     ClientBData = s.recv(8196)
                     seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
                     seqn = int(seqn)
-                    ClientBData = str(ClientBData)
-                    ClientBData = ClientBData.split("seq")[0]
-                    ClientBData = ClientBData.encode()
-                    pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION)
-                    print("Received packet with seqn:{} buffer is:{}".format( str(seqn),self.window_manager.window.buffer))
+                    #ClientBData = ClientBData.decode('utf-8')
+                    ClientBData = ClientBData.split(b"seq")[0]
+                    #ClientBData = ClientBData.encode()
+                    #print(ClientBData)
+                    pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
+                    pkt.update_checksum(ClientBData)
+                    print("Received packet with seqn:{} buffer is:{}".format(str(seqn), self.window_manager.window.buffer))
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
@@ -82,6 +84,7 @@ class Client:
                 writer.write()
                 writer.close()
                 print("New Received file closed. Check contents in your directory.")
+                print("the checksum is " + str(pkt.return_checksum()))
             else:
                 print("File Does Not Exist!")
         # Closing the socket

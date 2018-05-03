@@ -111,6 +111,7 @@ class UDPSender(Thread):
         while number_of_packets != 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
+            print(byte)
             while True:
                 #Wait for acks
                 lock.acquire()
@@ -119,7 +120,9 @@ class UDPSender(Thread):
                 if can_buffer:
                     break
             # Send it to the client packet by packet
-            pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION)
+            pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION,hashlib.md5())
+
+            pkt.update_checksum(byte)
             while True:
                 print('Waiting for send_pkt to return true')
                 lock.acquire()
@@ -127,7 +130,6 @@ class UDPSender(Thread):
                 lock.release()
                 if did_send :
                     break #Keep trying
-
             # Decrementing number of chunks received
             number_of_packets -= 1
             seqn = (seqn + 1) % self.max_seqn
@@ -137,6 +139,7 @@ class UDPSender(Thread):
         ack_listener_thread.stop() #implicitly closes the socket
         self.window_manager.close_connection()
         print("Sent from Server - Get function")
+        print("the checksum is " + str(pkt.return_checksum()))
 
     def num_pkts(self,filename):
         # Get the file's size
@@ -192,7 +195,7 @@ class Ack_Listener(StoppableThread):
             ack = bytes.decode("utf-8")
             if 'ACK' in ack:
                 ack_seqn = int(ack[3:])
-                pkt = Packet(8, ack_seqn, ack, Defaults.PLP, Defaults.P_CORRUPTION)
+                pkt = Packet(8, ack_seqn, ack, Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
                 lock.acquire()
                 print('Receiving ack with seqn:{}'.format(pkt.seqn))
                 if not pkt.isCorrupt() and not pkt.isLost():
