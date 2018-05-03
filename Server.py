@@ -90,7 +90,8 @@ class UDPSender(Thread):
         self.file = open(filename, "rb")
         self.dest = dest_addr
         self.socket = socket
-        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt)#GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
+        goBackN = False
+        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt) if not goBackN else GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
         self.max_seqn = max_seqn
         self.threadID = threadID
         self.packet_sending_lock = Semaphore()#Lock used to make send_pkt callback thread safe; as the timer in window
