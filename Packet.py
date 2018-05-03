@@ -1,11 +1,13 @@
+import hashlib
 from random import *
 class Packet:
-    def __init__(self, length, seqn,data, plp, pcorruption):
+    def __init__(self, length, seqn,data, plp, pcorruption, checksum):
         self.length = length
         self.seqn = seqn
         self.data = data
         self.plp = RandomGenerator(plp)
         self.pcorruption = RandomGenerator(pcorruption)
+        self.checksum = checksum
 
     def isACKType(self):
         """Returns whether the packet is a control packet or data packet,
@@ -22,6 +24,12 @@ class Packet:
         return 'Packet with seqn:{}'.format(self.seqn)
     def __repr__(self):
         return self.__str__()
+
+    def update_checksum(self, chunk):
+        self.checksum.update(chunk)
+
+    def return_checksum(self):
+        return self.checksum.hexdigest()
 
 class RandomGenerator:
 

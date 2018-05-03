@@ -111,6 +111,7 @@ class UDPSender(Thread):
         while number_of_packets != 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
+            print(byte)
             while True:
                 #Wait for acks
                 lock.acquire()
@@ -120,7 +121,8 @@ class UDPSender(Thread):
                     break
                 lock.release()
             # Send it to the client packet by packet
-            pkt = Packet(4096,seqn,byte,0,0)
+            pkt = Packet(4096,seqn,byte,0,0, hashlib.md5())
+            pkt.update_checksum(byte)
             if not self.window_manager.send_pkt(pkt):
                     # print('Waiting for them acks buffer:{}'.format(self.window_manager.buffer))
                 continue #Keep trying
@@ -133,6 +135,7 @@ class UDPSender(Thread):
         ack_listener_thread.stop() #implicitly closes the socket
         self.window_manager.close_connection()
         print("Sent from Server - Get function")
+        print("the checksum is " + str(pkt.return_checksum()))
 
     def num_pkts(self,filename):
         # Get the file's size
@@ -188,7 +191,7 @@ class Ack_Listener(StoppableThread):
             ack = bytes.decode("utf-8")
             if 'ACK' in ack:
                 ack_seqn = int(ack[3:])
-                pkt = Packet(8, ack_seqn, ack, 0, 0)
+                pkt = Packet(8, ack_seqn, ack, 0, 0, hashlib.md5())
                 lock.acquire()
                 print('Receiving ack with seqn:{}'.format(pkt.seqn))
                 window_manager.receive_ack(pkt)

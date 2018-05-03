@@ -60,10 +60,12 @@ class Client:
                     ClientBData = s.recv(8196)
                     seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
                     seqn = int(seqn)
-                    ClientBData = str(ClientBData)
-                    ClientBData = ClientBData.split("seq")[0]
-                    ClientBData = ClientBData.encode()
-                    pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
+                    #ClientBData = ClientBData.decode('utf-8')
+                    ClientBData = ClientBData.split(b"seq")[0]
+                    #ClientBData = ClientBData.encode()
+                    #print(ClientBData)
+                    pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption, hashlib.md5())
+                    pkt.update_checksum(ClientBData)
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
@@ -83,6 +85,7 @@ class Client:
                 writer.write()
                 writer.close()
                 print("New Received file closed. Check contents in your directory.")
+                print("the checksum is " + str(pkt.return_checksum()))
             else:
                 print("File Does Not Exist!")
         # Closing the socket
@@ -96,5 +99,5 @@ class Client:
 
 gobkn = GoBkNReceiver(1024)
 selective_repeat = SelectiveRepeatReceiver(3,1024)
-client = Client(1024,0,0,selective_repeat)
+client = Client(1024,1,1,selective_repeat)
 client.start_client()
