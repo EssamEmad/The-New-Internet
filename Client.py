@@ -33,7 +33,7 @@ class Client:
         s.bind((host, 0))
         self.sockets.append(s)
         # Asking for the desired file's name
-        filename = 'TestingFile.txt'#raw_input("Filename? -> ")
+        filename = 'TestingFile-1984.txt'#raw_input("Filename? -> ")
         # Checking if the user isn't requesting quitting
         if filename != 'q':
             # Sending the file's name to the server
@@ -58,7 +58,8 @@ class Client:
                 while size_client != delivered_pkts_count:
                     # Getting chunks of the file and its address
                     ClientBData = s.recv(8196)
-                    seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
+                    print(ClientBData)
+                    seqn = re.search('seq#(.+?)seq#', str(ClientBData)).group(1)
                     seqn = int(seqn)
                     #ClientBData = ClientBData.decode('utf-8')
                     ClientBData = ClientBData.split(b"seq")[0]

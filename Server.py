@@ -156,7 +156,7 @@ class UDPSender(Thread):
         The function is thread safe"""
         self.packet_sending_lock.acquire()
         print('Sending packet with seqn:{}'.format(pkt.seqn))
-        seqn_str = ("seq").encode('utf-8') + str(pkt.seqn).encode('utf-8') + ("seq").encode('utf-8')
+        seqn_str = ("seq#").encode('utf-8') + str(pkt.seqn).encode('utf-8') + ("seq#").encode('utf-8')
         seq_num = bytes(seqn_str)
         data_seqn = b"".join([pkt.data, seq_num])
         self.socket.sendto(data_seqn, self.dest)
