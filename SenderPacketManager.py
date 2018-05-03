@@ -52,7 +52,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
                 return True
             # else:
                 # print('Base seqn:{}, where pkts index:{}'.format(self.base_seqn,pkt.seqn))
-
+            # print('Them failed index:{} paket: {}  base:{} '.format(index,pkt.seqn,self.base_seqn))
         return False
 
     def can_buffer_pkts(self):
@@ -62,6 +62,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
 
     def receive_ack(self,pkt):
         index = self.calc_index(pkt.seqn)
+        print('Window manager receivin ack with seqn:{}, base:{} buffer:{}'.format(pkt.seqn,self.base_seqn,self.buffer))
         if index >= len(self.buffer) or index < 0:
             print('Ignoring ACK with SEQN:{}'.format(pkt.seqn))
             return #Ignore the ack
@@ -71,16 +72,20 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
             self.timers_dict[pkt.seqn].cancel()
             del self.timers_dict[pkt.seqn]
             print('Canceling timer for SEQN:{}'.format(pkt.seqn))
-        #re-organize the buffer if there were a continuous stream of ack'd packets
-        for i in range(len(self.buffer)):
-            if self.buffer[i] != None:
-                pkts = self.buffer[0:i]
-                del self.buffer[0:i]
-                self.buffer.extend([None] * i)
-                self.base_seqn += i
-                self.base_seqn %= self.max_sqn
-                # print('Window manager receiving ack with seqn:{}'.format(pkt.seqn))
-                return
+        #re-organize the buffer if there were a continuous stream of ack'd packets (continuous stream of Nones)
+        last_none_index = 0
+        while self.buffer[last_none_index] == None and last_none_index != len(self.buffer) - 1:
+            last_none_index += 1
+            i = last_none_index
+            pkts = self.buffer[0:i]
+            del self.buffer[0:i]
+            self.buffer.extend([None] * i)
+            self.base_seqn += i
+            self.base_seqn %= self.max_sqn
+            print('Advancing base to:{}'.format(self.base_seqn))
+            # print('Window manager receiving ack with seqn:{}'.format(pkt.seqn))
+            return
+
     def start_timer_for_pkt(self,pkt):
         print('Starting Timer')
         if pkt.seqn in self.timers_dict:

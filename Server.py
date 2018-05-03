@@ -121,11 +121,12 @@ class UDPSender(Thread):
             # Send it to the client packet by packet
             pkt = Packet(4096,seqn,byte,0,0)
             if not self.window_manager.send_pkt(pkt):
+                    # print('Waiting for them acks buffer:{}'.format(self.window_manager.buffer))
                 continue #Keep trying
             # Decrementing number of chunks received
             number_of_packets -= 1
             seqn = (seqn + 1) % self.max_seqn
-            print("Packet number:" + str(self.num_pkts - number_of_packets))
+            print("Packet number:" + str(seqn))
             # print("Data sending in process:")
         self.file.close()
         ack_listener_thread.stop() #implicitly closes the socket

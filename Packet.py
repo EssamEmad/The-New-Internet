@@ -18,7 +18,10 @@ class Packet:
     def isLost(self):
         return self.plp.random()
 
-
+    def __str__(self):
+        return 'Packet with seqn:{}'.format(self.seqn)
+    def __repr__(self):
+        return self.__str__()
 
 class RandomGenerator:
 
