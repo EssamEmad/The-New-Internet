@@ -63,6 +63,8 @@ class Client:
                     seqn = int(seqn)
                     #ClientBData = ClientBData.decode('utf-8')
                     ClientBData = ClientBData.split(b"seq")[0]
+                    if Defaults.P_CORRUPTION == 1:
+                        ClientBData += b"give me a banana !!"
                     #ClientBData = ClientBData.encode()
                     #print(ClientBData)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
