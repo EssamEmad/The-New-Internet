@@ -5,6 +5,7 @@ from numpy import long
 from Packet import *
 from threading import *
 import atexit
+from Defaults import *
 # Class of thread creation of the server
 class Server:
     def __init__(self, max_sqn,window_size):
@@ -90,8 +91,7 @@ class UDPSender(Thread):
         self.file = open(filename, "rb")
         self.dest = dest_addr
         self.socket = socket
-        goBackN = False
-        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt) if not goBackN else GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
+        self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt) if Defaults.SELECTIVE_REPEAT else GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
         self.max_seqn = max_seqn
         self.threadID = threadID
         self.packet_sending_lock = Semaphore()#Lock used to make send_pkt callback thread safe; as the timer in window
@@ -115,15 +115,19 @@ class UDPSender(Thread):
                 #Wait for acks
                 lock.acquire()
                 can_buffer = self.window_manager.can_buffer_pkts()
-                if can_buffer:
-                    lock.release()
-                    break
                 lock.release()
+                if can_buffer:
+                    break
             # Send it to the client packet by packet
-            pkt = Packet(4096,seqn,byte,0,0)
-            if not self.window_manager.send_pkt(pkt):
-                    # print('Waiting for them acks buffer:{}'.format(self.window_manager.buffer))
-                continue #Keep trying
+            pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION)
+            while True:
+                print('Waiting for send_pkt to return true')
+                lock.acquire()
+                did_send = self.window_manager.send_pkt(pkt)
+                lock.release()
+                if did_send :
+                    break #Keep trying
+
             # Decrementing number of chunks received
             number_of_packets -= 1
             seqn = (seqn + 1) % self.max_seqn
@@ -188,10 +192,13 @@ class Ack_Listener(StoppableThread):
             ack = bytes.decode("utf-8")
             if 'ACK' in ack:
                 ack_seqn = int(ack[3:])
-                pkt = Packet(8, ack_seqn, ack, 0, 0)
+                pkt = Packet(8, ack_seqn, ack, Defaults.PLP, Defaults.P_CORRUPTION)
                 lock.acquire()
                 print('Receiving ack with seqn:{}'.format(pkt.seqn))
-                window_manager.receive_ack(pkt)
+                if not pkt.isCorrupt() and not pkt.isLost():
+                    window_manager.receive_ack(pkt) #otherwise ignore it
+                else:
+                    print('Pkt:{} corrupt:{}  lost:{}'.format(pkt,pkt.isCorrupt(),pkt.isLost()))
                 lock.release()
         self.socket.close()
 
@@ -199,5 +206,5 @@ class Ack_Listener(StoppableThread):
         self.__receive_ack_listener__(self.lock,self.window_manager)
 
 
-server = Server(1024, 3)
+server = Server(Defaults.MAX_SEQN, Defaults.WINDOW_SIZE)
 server.start_server()

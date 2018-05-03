@@ -10,14 +10,18 @@ class Window:
 
     def slide_if_needed(self):
         """Returns the pckts that should be delivered"""
+        i = 0
         for i in range(len(self.buffer)):
-            if self.buffer[i] == None:
-                pkts = self.buffer[0:i]
-                del self.buffer[0:i]
-                self.buffer.extend([None] * i)
-                self.base_sqn += i
-                self.base_sqn %= self.max_sqn
-                return pkts
+            if self.buffer[i] is None:
+                break
+        pkts = self.buffer[0:i]
+        del self.buffer[0:i]
+        self.buffer.extend([None] * i)
+        if len(pkts):
+            self.base_sqn = (pkts[-1].seqn + 1) % self.max_sqn
+        # self.base_sqn %= self.max_sqn
+            print('Client advancing base to:{}'.format(self.base_sqn))
+        return pkts
 
     def __len__(self):
         return self.size
@@ -42,7 +46,14 @@ class SelectiveRepeatReceiver(ReceiverWindowManager):
         base = self.window.base_sqn
         #We are trying to capture 2 cases: a) One of the numbers rotated (58 and 3 for example if the max_seqn is 60 and window size is 10
         #b) 2 numbers didn't rotate
-        return abs(base - pkt.seqn) < self.window.size or (min(pkt.seqn,base) + self.window.max_sqn - max(pkt.seqn,base)) < self.window.size
+        # if pkt.seqn < base or base + self.window.max_sqn - pkt.seqn < self.windo:
+        #     prev_n_start_index = base - pkt.seqn
+        first_condition = False
+        if base < pkt.seqn:
+            first_condition = pkt.seqn - base < self.window.size
+        else:
+            first_condition = base - pkt.seqn - 1 < self.window.size #We want n + 1 previous packets to be acked
+        return first_condition or ((min(pkt.seqn,base) + self.window.max_sqn - max(pkt.seqn,base)) + 1) % self.window.max_sqn < self.window.size
         # return  abs(pkt.seqn + self.window.max_sqn - base) % self.window.max_sqn < self.window.size
         # return pkt.seqn >= self.window.base_sqn and pkt.seqn < (self.window.base_sqn + self.window.size) % self.window.max_sqn
     def receive_pkt(self,pkt):
@@ -58,8 +69,8 @@ class SelectiveRepeatReceiver(ReceiverWindowManager):
         #     return True
         # if self.is_pkt_expected(pkt): #Packet expected?
 
-        index = abs(self.window.base_sqn - pkt.seqn)
-        if index < len(self.window):
+        index = pkt.seqn - self.window.base_sqn
+        if index >= 0 and index < len(self.window):
             if not self.window.buffer[index]:
                 self.window.buffer[index] = pkt
         return self.window.slide_if_needed()

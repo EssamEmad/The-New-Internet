@@ -23,6 +23,9 @@ class Packet:
     def __repr__(self):
         return self.__str__()
 
+    # def __eq__(self, other):
+    #     return self.seqn == other.seqn and self.data == other.data
+
 class RandomGenerator:
 
     def __init__(self, probability = 0):
@@ -31,4 +34,4 @@ class RandomGenerator:
     def random(self):
         """Returns true or false depending on the probability that initialized the object with"
         """
-        return random.random() < self.probability
+        return random() < self.p

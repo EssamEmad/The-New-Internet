@@ -3,16 +3,15 @@ import socket
 from numpy import long
 from Packet import *
 from FileWriter import *
+from Defaults import *
 from pip._vendor.distlib.compat import raw_input
 from NetworkFlowAlgorithm import *
 import atexit
 # Class of thread creation of the client
 class Client:
-    def __init__(self,  max_sqn,plp,pcorruption, window_manager):
+    def __init__(self,  max_sqn, window_manager):
         """window_manager is one of the 3 subclasses of the abstract class ReceiverWindowManager"""
         self.max_sqn = max_sqn
-        self.plp = plp
-        self.pcorruption = pcorruption
         self.window_manager = window_manager
         atexit.register(self.close_sockets)
         self.sockets = []
@@ -55,7 +54,8 @@ class Client:
                 # Packets received
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ack_socket.bind(('', 0))
-                while size_client != 0:
+                delivered_pkts_count = 0
+                while size_client != delivered_pkts_count:
                     # Getting chunks of the file and its address
                     ClientBData = s.recv(8196)
                     seqn = re.search('seq(.+?)seq', str(ClientBData)).group(1)
@@ -63,22 +63,21 @@ class Client:
                     ClientBData = str(ClientBData)
                     ClientBData = ClientBData.split("seq")[0]
                     ClientBData = ClientBData.encode()
-                    pkt = Packet(len(ClientBData),seqn,ClientBData,self.plp, self.pcorruption)
+                    pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION)
+                    print("Received packet with seqn:{} buffer is:{}".format( str(seqn),self.window_manager.window.buffer))
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
                         ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
                         print('ACK WITH SQN: {}, sent from the client'.format(seqn))
+                    else:
+                        # print('Wont ack base:{} seqn:{}'.format(self.window_manager.window.base_sqn,seqn))
+                        raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
                     #in the window manager
                     # Write the data in the new file
                     if delivered_pkts:
                         writer.appendPackets(delivered_pkts)
-                    print("Received packet with seqn:" + str(seqn))
-                    # Incrementing numbers of packets recieved
-                    # Decrementing number of packets of the file itself we got before receiving
-                    size_client = size_client - 1
-                    #seqn = (seqn + 1) % self.max_sqn
-                    print(size_client)
+                        delivered_pkts_count += len(delivered_pkts)
                 # Closing the file
                 writer.write()
                 writer.close()
@@ -94,7 +93,6 @@ class Client:
                 socket.close()
                 self.sockets.remove(socket)
 
-gobkn = GoBkNReceiver(1024)
-selective_repeat = SelectiveRepeatReceiver(3,1024)
-client = Client(1024,0,0,selective_repeat)
+window = SelectiveRepeatReceiver(Defaults.WINDOW_SIZE,Defaults.MAX_SEQN) if Defaults.SELECTIVE_REPEAT else GoBkNReceiver(Defaults.MAX_SEQN)
+client = Client(Defaults.MAX_SEQN,window)
 client.start_client()
