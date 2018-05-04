@@ -28,6 +28,10 @@ class SenderPacketManager (ABC):
     def close_connection(self):
         """Cleanup method used to cancel timers..etc"""
         pass
+    @abstractmethod
+    def is_empty(self):
+        """Returns true if the buffer doesn't contain any pending packets, or packets pending ACKs"""
+        pass
 
 class SelectiveRepeatPacketManager(SenderPacketManager):
 
@@ -106,6 +110,9 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
 
     def calc_index(self,seqn):
         return abs(seqn + self.max_sqn - self.base_seqn) % self.max_sqn
+
+    def is_empty(self):
+        return not len(list(filter(lambda x : type(x) is Packet or x == SelectiveRepeatPacketManager.ACKED_TYPE,self.buffer )))
 class GoBackNWindowManager(SenderPacketManager):
 
     def __init__(self, window_size, max_sqn, send_callback, timeout = Defaults.TIMEOUT):

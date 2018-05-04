@@ -108,7 +108,7 @@ class UDPSender(Thread):
         lock = Semaphore()
         ack_listener_thread = Ack_Listener(lock,self.window_manager,self.socket)#Thread(target=UDPSender.receive_ack_listener,  args = (lock,self.window_manager,self.socket))
         ack_listener_thread.start()
-        while number_of_packets != 0:
+        while number_of_packets > 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
             print(byte)
@@ -133,13 +133,21 @@ class UDPSender(Thread):
             # Decrementing number of chunks received
             number_of_packets -= 1
             seqn = (seqn + 1) % self.max_seqn
-            print("Packet number:" + str(seqn))
+            print("Packet number:{} num_pkts:{}".format(str(seqn),number_of_packets))
             # print("Data sending in process:")
+        while True:
+            #Wait for any un-acked packets to be retransmitted
+            lock.acquire()
+            if self.window_manager.is_empty():
+                break
+            lock.release()
         self.file.close()
         ack_listener_thread.stop() #implicitly closes the socket
         self.window_manager.close_connection()
         print("Sent from Server - Get function")
         print("the checksum is " + str(pkt.return_checksum()))
+
+
 
     def num_pkts(self,filename):
         # Get the file's size
