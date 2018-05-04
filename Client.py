@@ -57,8 +57,10 @@ class Client:
                 delivered_pkts_count = 0
                 while size_client != delivered_pkts_count:
                     # Getting chunks of the file and its address
+                    print('Willl wait for them packets')
                     ClientBData = s.recv(8196)
-                    print(ClientBData)
+                    print('Got them packets')
+                    # print(ClientBData)
                     seqn = re.search('seq#(.+?)seq#', str(ClientBData)).group(1)
                     seqn = int(seqn)
                     #ClientBData = ClientBData.decode('utf-8')

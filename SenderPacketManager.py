@@ -37,7 +37,7 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
 
     ACKED_TYPE = 'Acked' #Used to mark a field in the buffer as being an acked packet so that when we try to slide the
     #window we'd know which packets are pending acks, which are empty slots and which have been acked(None is empty slot)
-    def __init__(self,window_size, max_sqn, send_callback, timeout = 6):
+    def __init__(self,window_size, max_sqn, send_callback, timeout = Defaults.TIMEOUT):
         """send_callback has to be thread safe"""
         # super().__init__(window_size, max_sqn, send_callback)
         self.window_size = window_size

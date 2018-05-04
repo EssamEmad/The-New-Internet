@@ -106,7 +106,8 @@ class UDPSender(Thread):
         number_of_packets = self.num_pkts
         seqn = 0
         lock = Semaphore()
-        ack_listener_thread = Ack_Listener(lock,self.window_manager,self.socket)#Thread(target=UDPSender.receive_ack_listener,  args = (lock,self.window_manager,self.socket))
+        self.ack_event = Event()
+        ack_listener_thread = Ack_Listener(lock,self.window_manager,self.socket,self.ack_event)#Thread(target=UDPSender.receive_ack_listener,  args = (lock,self.window_manager,self.socket))
         ack_listener_thread.start()
         while number_of_packets > 0:
             # Reading the file in the buffer
@@ -116,9 +117,14 @@ class UDPSender(Thread):
                 #Wait for acks
                 lock.acquire()
                 can_buffer = self.window_manager.can_buffer_pkts()
+                if not can_buffer:
+                    self.ack_event.clear() #Clear the event to wait for it so as not to acquire the lock for no damn reason at all
                 lock.release()
                 if can_buffer:
                     break
+                print('Waiting for event')
+                self.ack_event.wait()
+                print('Event has happened')
             # Send it to the client packet by packet
             pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION,hashlib.md5())
 
@@ -188,11 +194,12 @@ class StoppableThread(Thread):
 
 class Ack_Listener(StoppableThread):
 
-    def __init__(self,lock,window_manager,socket):
+    def __init__(self,lock,window_manager,socket,ack_event):
         super().__init__()
         self.lock = lock
         self.window_manager = window_manager
         self.socket = socket
+        self.ack_event = ack_event
     def __receive_ack_listener__(self,lock, window_manager):
         """Listens to acks sent from the client, and updates the window_manager in a thread safe manner by
                 using the lock provided. This method is expected to run asynchronously (be dispatched on a thread)"""
@@ -210,6 +217,7 @@ class Ack_Listener(StoppableThread):
                     window_manager.receive_ack(pkt) #otherwise ignore it
                 else:
                     print('Pkt:{} corrupt:{}  lost:{}'.format(pkt,pkt.isCorrupt(),pkt.isLost()))
+                self.ack_event.set()
                 lock.release()
         self.socket.close()
 
