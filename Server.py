@@ -112,7 +112,7 @@ class UDPSender(Thread):
         while number_of_packets > 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
-            print(byte)
+            # print(byte)
             while True:
                 #Wait for acks
                 lock.acquire()
@@ -122,15 +122,15 @@ class UDPSender(Thread):
                 lock.release()
                 if can_buffer:
                     break
-                print('Waiting for event')
+                # print('Waiting for event')
                 self.ack_event.wait()
-                print('Event has happened')
+                # print('Event has happened')
             # Send it to the client packet by packet
             pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION,hashlib.md5())
 
             pkt.update_checksum(byte)
             while True:
-                print('Waiting for send_pkt to return true')
+                # print('Waiting for send_pkt to return true')
                 lock.acquire()
                 did_send = self.window_manager.send_pkt(pkt)
                 lock.release()
@@ -169,7 +169,7 @@ class UDPSender(Thread):
         the data over the new internet
         The function is thread safe"""
         self.packet_sending_lock.acquire()
-        print('Sending packet with seqn:{}'.format(pkt.seqn))
+        # print('Sending packet with seqn:{}'.format(pkt.seqn))
         seqn_str = ("seq#").encode('utf-8') + str(pkt.seqn).encode('utf-8') + ("seq#").encode('utf-8')
         seq_num = bytes(seqn_str)
         data_seqn = b"".join([pkt.data, seq_num])
@@ -212,11 +212,11 @@ class Ack_Listener(StoppableThread):
                 ack_seqn = int(ack[3:])
                 pkt = Packet(8, ack_seqn, ack, Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
                 lock.acquire()
-                print('Receiving ack with seqn:{}'.format(pkt.seqn))
+                # print('Receiving ack with seqn:{}'.format(pkt.seqn))
                 if not pkt.isCorrupt() and not pkt.isLost():
                     window_manager.receive_ack(pkt) #otherwise ignore it
-                else:
-                    print('Pkt:{} corrupt:{}  lost:{}'.format(pkt,pkt.isCorrupt(),pkt.isLost()))
+                # else:
+                    # print('Pkt:{} corrupt:{}  lost:{}'.format(pkt,pkt.isCorrupt(),pkt.isLost()))
                 self.ack_event.set()
                 lock.release()
         self.socket.close()

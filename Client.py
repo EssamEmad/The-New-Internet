@@ -4,17 +4,20 @@ from numpy import long
 from Packet import *
 from FileWriter import *
 from Defaults import *
+from time import sleep
+from threading import *
 from pip._vendor.distlib.compat import raw_input
 from NetworkFlowAlgorithm import *
 import atexit
 # Class of thread creation of the client
 class Client:
-    def __init__(self,  max_sqn, window_manager):
+    def __init__(self,  max_sqn, window_manager, id):
         """window_manager is one of the 3 subclasses of the abstract class ReceiverWindowManager"""
         self.max_sqn = max_sqn
         self.window_manager = window_manager
         atexit.register(self.close_sockets)
         self.sockets = []
+        self.id = id
     def start_client(self):
         # print ("Starting " + self.name)
         self.clientSide()
@@ -49,7 +52,7 @@ class Client:
                 # Outputting the information relieved
                 print("File exists, " + str(filesize) + " Bytes")
                 # Creating a new file with the same file's name preceded by the word 'new_' for distinguishing
-                writer = FileWriter(filename)
+                writer = FileWriter(filename,self.id)
                 print("Receiving packets will start now if file exists.")
                 # Packets received
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -57,18 +60,18 @@ class Client:
                 delivered_pkts_count = 0
                 while size_client != delivered_pkts_count:
                     # Getting chunks of the file and its address
-                    print('Willl wait for them packets')
+                    # print('Willl wait for them packets')
                     ClientBData = s.recv(8196)
-                    print('Got them packets')
-                    # print(ClientBData)
+                    # print('Got them packets')
+                    # print(ClientBData.decode('utf-8'))
                     seqn = re.search('seq#(.+?)seq#', str(ClientBData)).group(1)
                     seqn = int(seqn)
                     #ClientBData = ClientBData.decode('utf-8')
-                    ClientBData = ClientBData.split(b"seq")[0]
+                    ClientBData = ClientBData.split(b"seq#")[0]
                     if Defaults.P_CORRUPTION == 1:
                         ClientBData += b"give me a banana !!"
                     #ClientBData = ClientBData.encode()
-                    #print(ClientBData)
+                    # print(ClientBData)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
                     pkt.update_checksum(ClientBData)
                     print("Received packet with seqn:{} buffer is:{}".format(str(seqn), self.window_manager.window.buffer))
@@ -76,9 +79,9 @@ class Client:
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
                         ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
-                        print('ACK WITH SQN: {}, sent from the client'.format(seqn))
+                        # print('ACK WITH SQN: {}, sent from the client'.format(seqn))
                     else:
-                        # print('Wont ack base:{} seqn:{}'.format(self.window_manager.window.base_sqn,seqn))
+                        print('Wont ack base:{} seqn:{}'.format(self.window_manager.window.base_sqn,seqn))
                         raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
                     #in the window manager
                     # Write the data in the new file
@@ -101,6 +104,13 @@ class Client:
                 socket.close()
                 self.sockets.remove(socket)
 
-window = SelectiveRepeatReceiver(Defaults.WINDOW_SIZE,Defaults.MAX_SEQN) if Defaults.SELECTIVE_REPEAT else GoBkNReceiver(Defaults.MAX_SEQN)
-client = Client(Defaults.MAX_SEQN,window)
-client.start_client()
+def fire_up_client(id):
+    window = SelectiveRepeatReceiver(Defaults.WINDOW_SIZE,
+                                     Defaults.MAX_SEQN) if Defaults.SELECTIVE_REPEAT else GoBkNReceiver(
+        Defaults.MAX_SEQN)
+    client = Client(Defaults.MAX_SEQN, window, i)
+    client.start_client()
+for i in range(6):
+    t = Thread(target=fire_up_client,args=[i])
+    t.start()
+    sleep(0.5)

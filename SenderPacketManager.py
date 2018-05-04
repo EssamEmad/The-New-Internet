@@ -71,16 +71,16 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
 
     def receive_ack(self,pkt):
         index = self.calc_index(pkt.seqn)
-        print('Window manager receivin ack with seqn:{}, base:{} buffer:{}'.format(pkt.seqn,self.base_seqn,self.buffer))
+        # print('Window manager receivin ack with seqn:{}, base:{} buffer:{}'.format(pkt.seqn,self.base_seqn,self.buffer))
         if index >= len(self.buffer) or index < 0:
-            print('Ignoring ACK with SEQN:{}'.format(pkt.seqn))
+            # print('Ignoring ACK with SEQN:{}'.format(pkt.seqn))
             return #Ignore the ack
         self.buffer[index] = SelectiveRepeatPacketManager.ACKED_TYPE
         # stop the timer
         if pkt.seqn in self.timers_dict and self.timers_dict[pkt.seqn]:
             self.timers_dict[pkt.seqn].cancel()
             del self.timers_dict[pkt.seqn]
-            print('Canceling timer for SEQN:{}'.format(pkt.seqn))
+            # print('Canceling timer for SEQN:{}'.format(pkt.seqn))
         #re-organize the buffer if there were a continuous stream of ack'd packets (continuous stream of Nones)
         i = 0
         for i in range(len(self.buffer)):
@@ -90,13 +90,13 @@ class SelectiveRepeatPacketManager(SenderPacketManager):
         del self.buffer[0:i]
         self.buffer.extend([None] * i)
         self.base_seqn = (self.base_seqn + i) % self.max_sqn
-        print('Advancing base to:{}'.format(self.base_seqn))
-        print('Window manager receivin ack with AFTEEEER seqn:{}, base:{} buffer:{}'.format(pkt.seqn,self.base_seqn,self.buffer))
+        # print('Advancing base to:{}'.format(self.base_seqn))
+        # print('Window manager receivin ack with AFTEEEER seqn:{}, base:{} buffer:{}'.format(pkt.seqn,self.base_seqn,self.buffer))
 
         return
 
     def start_timer_for_pkt(self,pkt):
-        print('Starting Timer')
+        # print('Starting Timer')
         if pkt.seqn in self.timers_dict:
             self.timers_dict[pkt.seqn].cancel()
         # else:
@@ -135,11 +135,11 @@ class GoBackNWindowManager(SenderPacketManager):
                 self.start_timer_for_pkt(pkt)
                 return True
         # else:
-        print('Base seqn:{}, where pkts index:{}'.format(self.base_seqn,pkt.seqn))
+        # print('Base seqn:{}, where pkts index:{}'.format(self.base_seqn,pkt.seqn))
 
     def can_buffer_pkts(self):
         can_buffer = len(list(filter(lambda x: x is None, self.buffer)))
-        print('Sender can buffer packets: {}, buffer:{}'.format(can_buffer,self.buffer))
+        # print('Sender can buffer packets: {}, buffer:{}'.format(can_buffer,self.buffer))
         return can_buffer
 
     def receive_ack(self,pkt):
@@ -159,7 +159,7 @@ class GoBackNWindowManager(SenderPacketManager):
         self.base_seqn %= self.max_sqn
 
     def start_timer_for_pkt(self,pkt):
-        print('Starting Timer for pkt:{}'.format(pkt.seqn))
+        # print('Starting Timer for pkt:{}'.format(pkt.seqn))
         # if pkt.seqn in self.timers_dict:
         #     policy = self.timers_dict[pkt.seqn]
         #     if policy.can_retry():

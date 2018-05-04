@@ -20,7 +20,7 @@ class Window:
         if len(pkts):
             self.base_sqn = (pkts[-1].seqn + 1) % self.max_sqn
         # self.base_sqn %= self.max_sqn
-            print('Client advancing base to:{}'.format(self.base_sqn))
+        #     print('Client advancing base to:{}'.format(self.base_sqn))
         return pkts
 
     def __len__(self):
