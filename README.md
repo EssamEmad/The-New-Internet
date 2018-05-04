@@ -10,8 +10,8 @@ Our attempt to create a new internet
 - [X] Server side ---> (*Mostafa*)
 - [X] Server with multi-threading support ---> (*Mostafa*)
 - [ ] Bug with scaling (When the file is large, the file received at the client is much smaller than the actual file. Most likely an issue with parsing the file in the sneder).
-- [ ] Testing Multiple Clients at the same time
-- [ ] Testing with plp and corrupt data
+- [X] Testing Multiple Clients at the same time (*Essam*)
+- [X] Testing with plp and corrupt data
 - [X] Stop and wait ---> (*Essam*)
 - [X] Selective repeat ---> (*Essam*)
 - [X] Go back-N ---> (*Essam*)
