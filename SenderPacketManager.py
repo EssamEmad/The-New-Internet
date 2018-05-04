@@ -127,7 +127,8 @@ class GoBackNWindowManager(SenderPacketManager):
     def send_pkt(self, pkt):
         """If the window is not full, we put the pkt in the window and call the
         send callback immediately without checking if a send request has already been made"""
-        if self.can_buffer_pkts():
+        is_retry = len(list(filter(lambda x: type(x) is Packet and x.seqn == pkt.seqn,self.buffer)))
+        if self.can_buffer_pkts() or is_retry:
             index = abs(self.base_seqn - pkt.seqn)
             if index < self.window_size:
                 self.buffer[index] = pkt
@@ -145,9 +146,11 @@ class GoBackNWindowManager(SenderPacketManager):
     def receive_ack(self,pkt):
         """In GoBackN we receive cumulative acks. So any packet in the buffer preceding the passed pkt
         will be delivered as well"""
-        index = self.calc_index(pkt.seqn)
+        index = self.calc_index(pkt.seqn) + 1
+        if index >= self.window_size or index < 0:
+            return
         # stop the timer
-        for i in range(index + 1):
+        for i in range(index):
             acked_pkt = self.buffer[i]
             if acked_pkt.seqn in self.timers_dict and self.timers_dict[acked_pkt.seqn]:
                 self.timers_dict[acked_pkt.seqn].cancel()
@@ -169,7 +172,8 @@ class GoBackNWindowManager(SenderPacketManager):
         timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
         timer.start()
         self.timers_dict[pkt.seqn] = timer#RetryPolicyWrapper(timer)
-
+    def is_empty(self):
+        return not len(list(filter(lambda x: x is not None, self.buffer)))
     def close_connection(self):
         for key in  self.timers_dict:
             self.timers_dict[key].cancel()

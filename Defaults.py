@@ -3,6 +3,6 @@ class Defaults:
     PLP = 0.5
     P_CORRUPTION = 0
     WINDOW_SIZE = 3
-    SELECTIVE_REPEAT = True
+    SELECTIVE_REPEAT = False
     MAX_SEQN = 1024
     TIMEOUT = 0.2

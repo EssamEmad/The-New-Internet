@@ -74,15 +74,15 @@ class Client:
                     # print(ClientBData)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
                     pkt.update_checksum(ClientBData)
-                    print("Received packet with seqn:{} buffer is:{}".format(str(seqn), self.window_manager.window.buffer))
+                    print("Received packet with seqn:{}".format(str(seqn)))
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
                         ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
                         # print('ACK WITH SQN: {}, sent from the client'.format(seqn))
                     else:
-                        print('Wont ack base:{} seqn:{}'.format(self.window_manager.window.base_sqn,seqn))
-                        raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
+                        print('Wont ack seqn:{}'.format(seqn))
+                        # raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
                     #in the window manager
                     # Write the data in the new file
                     if delivered_pkts:

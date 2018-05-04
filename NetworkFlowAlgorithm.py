@@ -89,8 +89,8 @@ class GoBkNReceiver (ReceiverWindowManager):
         else:
             return None
     def should_ack_pkt(self,pkt):
-        return pkt.seqn == self.expected_sqn
+        return pkt.seqn <= self.expected_sqn
 
 class StopWaitReceiver ( GoBkNReceiver):
     def __init__(self):
-        super.init(1)
+        super().__init__(1)
