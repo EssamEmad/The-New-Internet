@@ -108,9 +108,11 @@ def fire_up_client(id):
     window = SelectiveRepeatReceiver(Defaults.WINDOW_SIZE,
                                      Defaults.MAX_SEQN) if Defaults.SELECTIVE_REPEAT else GoBkNReceiver(
         Defaults.MAX_SEQN)
+    if Defaults.STOP_WAIT:
+        window = StopWaitReceiver()
     client = Client(Defaults.MAX_SEQN, window, i)
     client.start_client()
-for i in range(6):
+for i in range(1):
     t = Thread(target=fire_up_client,args=[i])
     t.start()
     sleep(0.5)

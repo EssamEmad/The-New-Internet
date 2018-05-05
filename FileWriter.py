@@ -10,13 +10,13 @@ class FileWriter:
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-        self.file = open( '{}/{}'.format(path,name), 'w')
-        self.data = ''
+        self.file = open( '{}/{}'.format(path,name), 'wb')
+        self.data = b''
     def appendPackets(self, packets):
-        testing_appended_packets = ''
+        testing_appended_packets = b''
         for packet in packets:
-            self.data += str(packet.data, 'utf-8')#.decode('utf-8')
-            testing_appended_packets += str(packet.data, 'utf-8')#packet.data.decode('utf-8')
+            self.data += packet.data#.decode('utf-8')
+            testing_appended_packets += packet.data#packet.data.decode('utf-8')
         # print('Filewriter packets appended: {}'.format(packets))
         # print('Packet after decoding:{}'.format(testing_appended_packets))
     def write(self):

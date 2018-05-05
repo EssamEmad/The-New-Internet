@@ -85,12 +85,23 @@ class GoBkNReceiver (ReceiverWindowManager):
         if pkt.seqn == self.expected_sqn:
             self.expected_sqn += 1
             self.expected_sqn %= self.max_sqn
+            print('Advancing seqn:{}'.format(self.expected_sqn))
             return [pkt]
         else:
             return None
     def should_ack_pkt(self,pkt):
         return pkt.seqn <= self.expected_sqn
 
-class StopWaitReceiver ( GoBkNReceiver):
+class StopWaitReceiver ( ReceiverWindowManager):
     def __init__(self):
-        super().__init__(1)
+        super().__init__(1,1)
+        self.expected = 0
+    def receive_pkt(self,pkt):
+        if pkt.seqn == self.expected:
+            self.expected ^= 1 #Will invert it
+            print('Expected: {}'.format(self.expected))
+            return [pkt]
+        return None
+
+    def should_ack_pkt(self,pkt):
+        return pkt.seqn == self.expected

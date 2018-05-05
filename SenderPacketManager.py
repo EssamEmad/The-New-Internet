@@ -182,8 +182,8 @@ class GoBackNWindowManager(SenderPacketManager):
         return abs(seqn + self.max_sqn - self.base_seqn) % self.max_sqn
 
 class StopAndWaitWindowManager(GoBackNWindowManager):
-    def __init__(self, max_sqn, send_callback, timeout=6):
-        super().__init__(1,max_sqn,send_callback,timeout)
+    def __init__(self, send_callback, timeout=Defaults.TIMEOUT):
+        super().__init__(1,2,send_callback,timeout)
 
 
 # class RetryPolicyWrapper:

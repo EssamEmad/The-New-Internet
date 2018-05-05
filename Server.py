@@ -92,6 +92,8 @@ class UDPSender(Thread):
         self.dest = dest_addr
         self.socket = socket
         self.window_manager = SelectiveRepeatPacketManager(window_size,max_seqn,self.send_pkt) if Defaults.SELECTIVE_REPEAT else GoBackNWindowManager(window_size,max_seqn,self.send_pkt)
+        if Defaults.STOP_WAIT:
+            self.window_manager = StopAndWaitWindowManager(self.send_pkt)
         self.max_seqn = max_seqn
         self.threadID = threadID
         self.packet_sending_lock = Semaphore()#Lock used to make send_pkt callback thread safe; as the timer in window
