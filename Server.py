@@ -140,7 +140,10 @@ class UDPSender(Thread):
                     break #Keep trying
             # Decrementing number of chunks received
             number_of_packets -= 1
-            seqn = (seqn + 1) % self.max_seqn
+            if Defaults.STOP_WAIT:
+                seqn ^= 1
+            else:
+                seqn = (seqn + 1) % self.max_seqn
             print("Packet number:{} num_pkts:{}".format(str(seqn),number_of_packets))
             # print("Data sending in process:")
         while True:

@@ -99,9 +99,10 @@ class StopWaitReceiver ( ReceiverWindowManager):
     def receive_pkt(self,pkt):
         if pkt.seqn == self.expected:
             self.expected ^= 1 #Will invert it
-            print('Expected: {}'.format(self.expected))
+            print('Changing expected to Expected: {}'.format(self.expected))
             return [pkt]
         return None
 
     def should_ack_pkt(self,pkt):
-        return pkt.seqn == self.expected
+        # return pkt.seqn == self.expected
+        return True

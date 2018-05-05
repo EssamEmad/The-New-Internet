@@ -6,6 +6,7 @@ from FileWriter import *
 from Defaults import *
 from time import sleep
 from threading import *
+import time
 from pip._vendor.distlib.compat import raw_input
 from NetworkFlowAlgorithm import *
 import atexit
@@ -79,7 +80,7 @@ class Client:
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
                         ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
-                        # print('ACK WITH SQN: {}, sent from the client'.format(seqn))
+                        print('ACK WITH SQN: {}, sent from the client'.format(seqn))
                     else:
                         print('Wont ack seqn:{}'.format(seqn))
                         # raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
@@ -110,9 +111,18 @@ def fire_up_client(id):
         Defaults.MAX_SEQN)
     if Defaults.STOP_WAIT:
         window = StopWaitReceiver()
-    client = Client(Defaults.MAX_SEQN, window, i)
+    client = Client(Defaults.MAX_SEQN, window, id)
     client.start_client()
-for i in range(1):
+for i in range(5):
     t = Thread(target=fire_up_client,args=[i])
     t.start()
     sleep(0.5)
+# ti = 0
+# for j in range(5):
+#     start_time = time.time()
+#     for i in range(1):
+#         t = Thread(target=fire_up_client,args=[i])
+#         t.start()
+#         time.sleep(0.5)
+#     ti = ti + time.time() - start_time
+# print("---  seconds Selective repeate---", ti)

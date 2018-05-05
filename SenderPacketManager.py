@@ -181,11 +181,58 @@ class GoBackNWindowManager(SenderPacketManager):
     def calc_index(self,seqn):
         return abs(seqn + self.max_sqn - self.base_seqn) % self.max_sqn
 
-class StopAndWaitWindowManager(GoBackNWindowManager):
-    def __init__(self, send_callback, timeout=Defaults.TIMEOUT):
-        super().__init__(1,2,send_callback,timeout)
+class StopAndWaitWindowManager(SenderPacketManager):
+    def __init__(self, send_callback, timeout = Defaults.TIMEOUT):
+        """send_callback is the callback used to actually transmit the pckt over
+        the internet"""
+        self.send_callback = send_callback
+        self.timeout_length = timeout
+        self.last_sent_seqn = 1 #initialize to 1 to allow sending a 0 in the beginning
+        self.timers_dict = {}
+        self.sent_pkt = None
 
+    def send_pkt(self, pkt):
+        """Returns whether or not the packet was buffered to be sent"""
+        is_retry = False
+        if self.sent_pkt:
+            is_retry = pkt.seqn == self.sent_pkt.seqn and pkt.data == self.sent_pkt.data
+        print('Retry:{} pkt:{} sent pkt seqn:{}'.format(is_retry,pkt,self.last_sent_seqn))
+        if  is_retry or (not self.sent_pkt and pkt.seqn == (self.last_sent_seqn ^ 1)):
+            self.sent_pkt = pkt
+            self.start_timer_for_pkt(pkt)
+            self.send_callback(pkt)
+            self.last_sent_seqn = pkt.seqn
+            return True
+        return False
 
+    def can_buffer_pkts(self):
+        return self.sent_pkt is None
+
+    def receive_ack(self, pkt):
+        """Receive a control packet (NAK or ACK)"""
+        if self.sent_pkt and pkt.seqn == self.sent_pkt.seqn:
+            pkt = self.sent_pkt
+            self.sent_pkt = None
+            if pkt.seqn in self.timers_dict and self.timers_dict[pkt.seqn]:
+                self.timers_dict[pkt.seqn].cancel()
+                del self.timers_dict[pkt.seqn]
+            return pkt
+        return None
+
+    def close_connection(self):
+        """Cleanup method used to cancel timers..etc"""
+        for key in  self.timers_dict:
+            self.timers_dict[key].cancel()
+
+    def is_empty(self):
+        """Returns true if the buffer doesn't contain any pending packets, or packets pending ACKs"""
+        return self.sent_pkt is None
+
+    def start_timer_for_pkt(self,pkt):
+        timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
+        timer.start()
+        self.timers_dict[pkt.seqn] = timer#RetryPolicyWrapper(timer)
+        print('Starting timer')
 # class RetryPolicyWrapper:
 # #Wrapper used to store the timer in the timers dict. (Awfully designed, but not a pythoniesta and too lazy)
 #     def __init__(self,timer, max_tries=5):
