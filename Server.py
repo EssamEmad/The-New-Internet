@@ -1,5 +1,10 @@
 import socket
 import os
+
+import time
+
+import datetime
+
 from SenderPacketManager import *
 from numpy import long
 from Packet import *
@@ -67,13 +72,13 @@ class Server:
             # Receiving the file's name
             data, addr = sock.recvfrom(4096)
             # Conforming connection with the client
-            print("client connedted ip:<" + str(addr) + ">")
+            print("Client connected ip:<" + str(addr) + ">")
             # Calling the running function for sending the file
             self.run_server(data, addr, sock)
             # Thread is created for each incoming connection
 
     def close_sockets(self):
-        print('close got called sockets: {}'.format(self.sockets))
+        print('Close got called sockets: {}'.format(self.sockets))
         for so in self.sockets:
             so.close()
             self.sockets.remove(so)
@@ -112,6 +117,12 @@ class UDPSender(Thread):
         ack_listener_thread = Ack_Listener(lock,self.window_manager,self.socket,self.ack_event)#Thread(target=UDPSender.receive_ack_listener,  args = (lock,self.window_manager,self.socket))
         ack_listener_thread.start()
         data_bytes = b''
+        print('####################################################')
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        print(st, '--- Beginning of sending packets #')
+        print('####################################################')
+        print()
         while number_of_packets > 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
@@ -156,9 +167,17 @@ class UDPSender(Thread):
         self.file.close()
         ack_listener_thread.stop() #implicitly closes the socket
         self.window_manager.close_connection()
-        print("Sent from Server - Get function")
-        print("the checksum is " + str(pkt.return_checksum()))
-        print(pkt.checksum1(data_bytes))
+        print()
+        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("The hashed checksum is " + str(pkt.return_checksum()))
+        print("The regular checksum is ", pkt.checksum1(data_bytes))
+        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print()
+        print('###################################################')
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        print(st, '--- Ending of sending packets #')
+        print('###################################################')
+        print()
 
     def num_pkts(self,filename):
         # Get the file's size

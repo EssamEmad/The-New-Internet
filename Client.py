@@ -1,5 +1,7 @@
 import re
 import socket
+
+import datetime
 from numpy import long
 from Packet import *
 from FileWriter import *
@@ -22,8 +24,6 @@ class Client:
     def start_client(self):
         # print ("Starting " + self.name)
         self.clientSide()
-
-
 
     def clientSide(self):
         # Host IP
@@ -51,10 +51,16 @@ class Client:
                 filesize = long(data[8:-1])
                 size_client = int(filesize)
                 # Outputting the information relieved
-                print("File exists, " + str(filesize) + " Bytes")
+                print("File exists with size: " + str(filesize) + " Bytes")
                 # Creating a new file with the same file's name preceded by the word 'new_' for distinguishing
                 writer = FileWriter(filename,self.id)
-                print("Receiving packets will start now if file exists.")
+                print()
+                print('########################################################')
+                ts = time.time()
+                st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+                print(st, '--- Beginning of receiving packets #')
+                print('########################################################')
+                print()
                 # Packets received
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ack_socket.bind(('', 0))
@@ -82,11 +88,12 @@ class Client:
                     #send an ack
                     if self.window_manager.should_ack_pkt(pkt):
                         ack_socket.sendto("ACK{}".format(seqn).encode(), addr)
-                        print('ACK WITH SQN: {}, sent from the client'.format(seqn))
+                        print('ACK with sequence#: {}, sent from the client'.format(seqn))
                     else:
-                        print('Wont ack seqn:{}'.format(seqn))
-                        # raise Exception('We just ran into a dead lock because of a big difference between client and server windows')
-                    #in the window manager
+                        print("Won't ack sequence#:{}".format(seqn))
+                        raise Exception('We just ran into a dead lock because of a big difference between client and '
+                                        'server windows')
+                    # In the window manager
                     # Write the data in the new file
                     if delivered_pkts:
                         writer.appendPackets(delivered_pkts)
@@ -94,12 +101,22 @@ class Client:
                 # Closing the file
                 writer.write()
                 writer.close()
-                print("New Received file closed. Check contents in your directory.")
-                print("the checksum is " + str(pkt.return_checksum()))
-                print(pkt.checksum1(data_bytes))
-                print(pkt.is_accepted(data_bytes))
+                print()
+                print('#####################################################')
+                ts = time.time()
+                st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+                print(st, '--- Ending of receiving packets #')
+                print('#####################################################')
+                print()
+                print(" ---> New Received file closed. Check contents in your directory.  <--- ")
+                print()
+                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                print("The hashed checksum is " + str(pkt.return_checksum()))
+                print("The regular checksum is ", pkt.checksum1(data_bytes))
+                print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                print()
             else:
-                print("File Does Not Exist!")
+                raise Exception("File Does Not Exist!")
         # Closing the socket
         s.close()
         self.sockets.remove(s)
