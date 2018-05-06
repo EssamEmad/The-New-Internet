@@ -117,7 +117,7 @@ class Client:
                 print()
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 print("The hashed checksum is " + str(pkt.return_checksum()))
-                print("The regular checksum is ", pkt.checksum1(data_bytes))
+                # print("The regular checksum is ", pkt.checksum1(data_bytes))
                 print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 print()
             else:
