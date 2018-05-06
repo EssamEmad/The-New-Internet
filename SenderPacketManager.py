@@ -163,15 +163,15 @@ class GoBackNWindowManager(SenderPacketManager):
 
     def start_timer_for_pkt(self,pkt):
         # print('Starting Timer for pkt:{}'.format(pkt.seqn))
-        # if pkt.seqn in self.timers_dict:
-        #     policy = self.timers_dict[pkt.seqn]
-        #     if policy.can_retry():
-        #         policy.timer = Timer(self.timeout_length,self.send_pkt, [pkt])
-        #         policy.timer.start()
-        # else:
-        timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
-        timer.start()
-        self.timers_dict[pkt.seqn] = timer#RetryPolicyWrapper(timer)
+        if pkt.seqn in self.timers_dict:
+            policy = self.timers_dict[pkt.seqn]
+            if policy.can_retry():
+                policy.timer = Timer(self.timeout_length,self.send_pkt, [pkt])
+                policy.timer.start()
+        else:
+            timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
+            timer.start()
+            self.timers_dict[pkt.seqn] = timer#RetryPolicyWrapper(timer)
     def is_empty(self):
         return not len(list(filter(lambda x: x is not None, self.buffer)))
     def close_connection(self):
@@ -192,17 +192,22 @@ class StopAndWaitWindowManager(SenderPacketManager):
         self.sent_pkt = None
 
     def send_pkt(self, pkt):
-        """Returns whether or not the packet was buffered to be sent"""
+        """Returns whether or not the packet was buffered to be sent
+        Note: In case of retransmission more than the maximum amount, the method would still return True, but
+        the packet will not be buffered"""
         is_retry = False
         if self.sent_pkt:
             is_retry = pkt.seqn == self.sent_pkt.seqn and pkt.data == self.sent_pkt.data
         print('Retry:{} pkt:{} sent pkt seqn:{}'.format(is_retry,pkt,self.last_sent_seqn))
         if  is_retry or (not self.sent_pkt and pkt.seqn == (self.last_sent_seqn ^ 1)):
             self.sent_pkt = pkt
-            self.start_timer_for_pkt(pkt)
-            self.send_callback(pkt)
-            self.last_sent_seqn = pkt.seqn
-            return True
+            if self.start_timer_for_pkt(pkt):
+                self.send_callback(pkt)
+                self.last_sent_seqn = pkt.seqn
+                return True
+            else:
+                self.sent_pkt = None
+                return True
         return False
 
     def can_buffer_pkts(self):
@@ -229,24 +234,33 @@ class StopAndWaitWindowManager(SenderPacketManager):
         return self.sent_pkt is None
 
     def start_timer_for_pkt(self,pkt):
-        timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
-        timer.start()
-        self.timers_dict[pkt.seqn] = timer#RetryPolicyWrapper(timer)
-        print('Starting timer')
-# class RetryPolicyWrapper:
-# #Wrapper used to store the timer in the timers dict. (Awfully designed, but not a pythoniesta and too lazy)
-#     def __init__(self,timer, max_tries=5):
-#         self.timer = timer
-#         self.max_tries = max_tries
-#         self.tries = 0
-#
-#     def can_retry(self):
-#         """Returns whether we can retry, r the the maximum number of retries has been reached.
-#         Caling this method max_tries times would return false at the end"""
-#         self.tries += 1
-#         can_retry =  self.tries < self.max_tries
-#         return can_retry
-#
-#
-#     def cancel(self):
-#         self.timer.cancel()
+        if pkt.seqn in self.timers_dict:
+            policy = self.timers_dict[pkt.seqn]
+            if policy.can_retry():
+                policy.timer = Timer(self.timeout_length,self.send_pkt, [pkt])
+                policy.timer.start()
+            else:
+                return False
+        else:
+            timer =  Timer(self.timeout_length,self.send_pkt, [pkt])
+            timer.start()
+            self.timers_dict[pkt.seqn] = RetryPolicyWrapper(timer)
+            print('Starting timer')
+        return True
+class RetryPolicyWrapper:
+#Wrapper used to store the timer in the timers dict. (Awfully designed, but not a pythoniesta and too lazy)
+    def __init__(self,timer, max_tries=50):
+        self.timer = timer
+        self.max_tries = max_tries
+        self.tries = 0
+
+    def can_retry(self):
+        """Returns whether we can retry, r the the maximum number of retries has been reached.
+        Caling this method max_tries times would return false at the end"""
+        self.tries += 1
+        can_retry =  self.tries < self.max_tries
+        return can_retry
+
+
+    def cancel(self):
+        self.timer.cancel()
