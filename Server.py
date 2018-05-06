@@ -111,9 +111,11 @@ class UDPSender(Thread):
         self.ack_event = Event()
         ack_listener_thread = Ack_Listener(lock,self.window_manager,self.socket,self.ack_event)#Thread(target=UDPSender.receive_ack_listener,  args = (lock,self.window_manager,self.socket))
         ack_listener_thread.start()
+        data_bytes = b''
         while number_of_packets > 0:
             # Reading the file in the buffer
             byte = self.file.read(4096)
+            data_bytes += byte
             # print(byte)
             while True:
                 #Wait for acks
@@ -129,7 +131,6 @@ class UDPSender(Thread):
                 # print('Event has happened')
             # Send it to the client packet by packet
             pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION,hashlib.md5())
-
             pkt.update_checksum(byte)
             while True:
                 # print('Waiting for send_pkt to return true')
@@ -157,8 +158,7 @@ class UDPSender(Thread):
         self.window_manager.close_connection()
         print("Sent from Server - Get function")
         print("the checksum is " + str(pkt.return_checksum()))
-
-
+        print(pkt.checksum1(data_bytes))
 
     def num_pkts(self,filename):
         # Get the file's size

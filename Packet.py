@@ -31,6 +31,39 @@ class Packet:
     def return_checksum(self):
         return self.checksum.hexdigest()
 
+    def checksum1(self, data_chunks, sum=0):
+        data_chunks = data_chunks.decode()
+        # make 16 bit words out of every two adjacent 8 bit words in the packet
+        # and add them up
+        for i in range(0, len(data_chunks), 2):
+            if i + 1 >= len(data_chunks):
+                sum += ord(data_chunks[i]) & 0xFF
+            else:
+                w = ((ord(data_chunks[i]) << 8) & 0xFF00) + (ord(data_chunks[i + 1]) & 0xFF)
+                sum += w
+        # take only 16 bits out of the 32 bit sum and add up the carries
+        while (sum >> 16) > 0:
+            sum = (sum & 0xFFFF) + (sum >> 16)
+        # one's complement the result
+        sum = ~sum
+        return sum & 0xFFFF
+
+    def is_accepted(self, data_chunks, sum=0):
+        data_chunks = data_chunks.decode()
+        # make 16 bit words out of every two adjacent 8 bit words in the packet
+        # and add them up
+        for i in range(0, len(data_chunks), 2):
+            if i + 1 >= len(data_chunks):
+                sum += ord(data_chunks[i]) & 0xFF
+            else:
+                w = ((ord(data_chunks[i]) << 8) & 0xFF00) + (ord(data_chunks[i + 1]) & 0xFF)
+                sum += w
+        # take only 16 bits out of the 32 bit sum and add up the carries
+        while (sum >> 16) > 0:
+            sum = (sum & 0xFFFF) + (sum >> 16)
+        sum = sum + ~sum
+        return ~sum == 0
+
 class RandomGenerator:
 
     def __init__(self, probability = 0):

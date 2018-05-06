@@ -59,6 +59,7 @@ class Client:
                 ack_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 ack_socket.bind(('', 0))
                 delivered_pkts_count = 0
+                data_bytes = b''
                 while size_client != delivered_pkts_count:
                     # Getting chunks of the file and its address
                     # print('Willl wait for them packets')
@@ -70,7 +71,8 @@ class Client:
                     #ClientBData = ClientBData.decode('utf-8')
                     ClientBData = ClientBData.split(b"seq#")[0]
                     if Defaults.P_CORRUPTION == 1:
-                        ClientBData += b"give me a banana !!"
+                        ClientBData += b'Me want a banana!'
+                    data_bytes += ClientBData
                     #ClientBData = ClientBData.encode()
                     # print(ClientBData)
                     pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
@@ -94,6 +96,8 @@ class Client:
                 writer.close()
                 print("New Received file closed. Check contents in your directory.")
                 print("the checksum is " + str(pkt.return_checksum()))
+                print(pkt.checksum1(data_bytes))
+                print(pkt.is_accepted(data_bytes))
             else:
                 print("File Does Not Exist!")
         # Closing the socket
