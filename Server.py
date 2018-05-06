@@ -138,9 +138,9 @@ class UDPSender(Thread):
                 lock.release()
                 if can_buffer:
                     break
-                # print('Waiting for event')
+                print('Waiting for event buffer:{}'.format(self.window_manager.buffer))
                 self.ack_event.wait()
-                # print('Event has happened')
+                print('Event has happened')
             # Send it to the client packet by packet
             pkt = Packet(4096,seqn,byte,Defaults.PLP,Defaults.P_CORRUPTION,hashlib.md5())
             pkt.update_checksum(byte)

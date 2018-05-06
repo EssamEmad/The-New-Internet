@@ -1,6 +1,6 @@
 import re
 import socket
-
+import shutil
 import datetime
 from numpy import long
 from Packet import *
@@ -75,13 +75,18 @@ class Client:
                     seqn = re.search('seq#(.+?)seq#', str(ClientBData)).group(1)
                     seqn = int(seqn)
                     #ClientBData = ClientBData.decode('utf-8')
-                    ClientBData = ClientBData.split(b"seq#")[0]
-                    if Defaults.P_CORRUPTION == 1:
-                        ClientBData += b'Me want a banana!'
+                    pkt = Packet(len(ClientBData), seqn, ClientBData, Defaults.PLP, Defaults.P_CORRUPTION,
+                                 hashlib.md5())
+                    if pkt.isCorrupt():
+                        pkt.data += b'Me want a banana!'
                     data_bytes += ClientBData
+                    ClientBData = ClientBData.split(b"seq#")[0]
+                    # if Defaults.P_CORRUPTION == 1:
+                    #     ClientBData += b'Me want a banana!'
+                    # data_bytes += ClientBData
                     #ClientBData = ClientBData.encode()
                     # print(ClientBData)
-                    pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
+                    # pkt = Packet(len(ClientBData),seqn,ClientBData,Defaults.PLP, Defaults.P_CORRUPTION, hashlib.md5())
                     pkt.update_checksum(ClientBData)
                     print("Received packet with seqn:{}".format(str(seqn)))
                     delivered_pkts = self.window_manager.receive_pkt(pkt) #Marks the pkt as received
@@ -134,6 +139,10 @@ def fire_up_client(id):
         window = StopWaitReceiver()
     client = Client(Defaults.MAX_SEQN, window, id)
     client.start_client()
+
+path = 'Clients/'
+if os.path.exists(os.path.dirname(path)):
+    shutil.rmtree(path) #clear the output folder
 for i in range(5):
     t = Thread(target=fire_up_client,args=[i])
     t.start()
