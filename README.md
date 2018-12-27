@@ -16,7 +16,7 @@ Our attempt to create a new internet
 - [X] Selective repeat ---> (*Essam*)
 - [X] Go back-N ---> (*Essam*)
 - [X] PLP ---> (*Essam*)
-- [ ] Corrupted data ---> (*Mostafa*)
+- [X] Corrupted data ---> (*Mostafa*)
 - [X ] Data class ---> (*Essam*)
-- [ ] Checksum -----> (*Mostafa*)
-- [ ] Bonus
+- [X] Checksum -----> (*Mostafa*)
+- [X] Bonus
